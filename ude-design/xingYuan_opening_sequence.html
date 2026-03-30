@@ -1,0 +1,251 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.universe{background:#000;min-height:700px;border-radius:20px;overflow:hidden;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;}
+canvas{position:absolute;inset:0;width:100%;height:100%;}
+.stage{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:40px 24px;min-height:700px;}
+.s{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;animation:fadeIn .8s ease forwards;}
+.s.active{display:flex;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInSlow{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.3) rotate(-180deg)}to{opacity:1;transform:scale(1) rotate(0deg)}}
+@keyframes typewriter{from{width:0}to{width:100%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+@keyframes riseUp{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{text-shadow:0 0 20px rgba(127,119,221,.3)}50%{text-shadow:0 0 40px rgba(127,119,221,.8),0 0 80px rgba(127,119,221,.4)}}
+
+.logo-svg{animation:scaleIn 1.2s cubic-bezier(.34,1.56,.64,1) forwards;filter:drop-shadow(0 0 20px rgba(127,119,221,.6));}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:700;color:#EEEDFE;letter-spacing:10px;animation:glow 3s ease-in-out infinite,fadeIn .8s ease forwards;margin-top:16px;}
+.logo-sub{font-family:'Orbitron',sans-serif;font-size:12px;color:#7F77DD;letter-spacing:5px;margin-top:8px;animation:fadeIn 1s .4s ease both;}
+
+.poem-line{font-size:18px;color:#EEEDFE;letter-spacing:3px;line-height:2.2;opacity:0;font-weight:300;}
+.poem-line.show{animation:fadeIn .8s ease forwards;}
+.poem-line.highlight{color:#AFA9EC;font-size:22px;font-weight:500;letter-spacing:4px;}
+
+.bg-text{font-size:15px;color:#AFA9EC;line-height:2.2;letter-spacing:2px;opacity:0;}
+.bg-text.show{animation:fadeIn 1s ease forwards;}
+.bg-accent{color:#7F77DD;font-weight:500;}
+
+.touch-hint{font-size:14px;color:#534AB7;letter-spacing:3px;margin-top:32px;animation:pulse 2s ease-in-out infinite;}
+.touch-orb{width:80px;height:80px;border-radius:50%;border:1px solid #534AB7;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:pulse 2s ease-in-out infinite;margin:0 auto 16px;transition:all .3s;position:relative;}
+.touch-orb:hover{border-color:#7F77DD;transform:scale(1.1);}
+.touch-orb::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:0.5px solid #26215C;animation:pulse 2s 1s ease-in-out infinite;}
+.touch-orb::before{content:'';position:absolute;inset:-16px;border-radius:50%;border:0.5px solid #1a1040;animation:pulse 2s .5s ease-in-out infinite;}
+
+.form-card{background:rgba(38,33,92,.85);border:0.5px solid #534AB7;border-radius:20px;padding:32px 28px;width:100%;max-width:380px;animation:riseUp 1s cubic-bezier(.34,1.56,.64,1) forwards;}
+.field-label{font-size:11px;color:#AFA9EC;letter-spacing:.08em;margin-bottom:6px;display:block;}
+.field{margin-bottom:16px;}
+.field input,.field select{width:100%;padding:11px 14px;background:rgba(255,255,255,.06);border:0.5px solid #534AB7;border-radius:10px;color:#EEEDFE;font-size:14px;outline:none;font-family:system-ui;}
+.field input::placeholder{color:#3C3489;}
+.field select option{background:#1a1040;color:#EEEDFE;}
+.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px;}
+.av{aspect-ratio:1;border-radius:12px;border:1.5px solid #26215C;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:24px;}
+.av:hover,.av.on{border-color:#7F77DD;background:rgba(127,119,221,.2);}
+.start-btn{width:100%;padding:14px;background:#7F77DD;border:none;border-radius:12px;color:#EEEDFE;font-size:15px;font-weight:500;cursor:pointer;letter-spacing:1px;margin-top:8px;font-family:'Orbitron',sans-serif;font-size:13px;transition:transform .2s;}
+.start-btn:hover{transform:scale(1.02);}
+.start-btn:active{transform:scale(.97);}
+.skip-btn{position:absolute;top:16px;right:20px;font-size:11px;color:#3C3489;cursor:pointer;letter-spacing:.1em;z-index:20;padding:6px 12px;border:0.5px solid #26215C;border-radius:20px;transition:color .2s;}
+.skip-btn:hover{color:#7F77DD;border-color:#534AB7;}
+.progress{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:20;}
+.dot{width:6px;height:6px;border-radius:50%;background:#26215C;transition:background .3s;}
+.dot.on{background:#7F77DD;}
+.form-title{font-family:'Orbitron',sans-serif;font-size:13px;color:#EEEDFE;letter-spacing:2px;margin-bottom:20px;text-align:center;}
+</style>
+
+<div class="universe" id="uni">
+  <canvas id="cv"></canvas>
+  <div class="skip-btn" onclick="skipTo7()" id="skip">跳过 →</div>
+  <div class="progress" id="prog"></div>
+  <div class="stage">
+
+    <div class="s active" id="s1">
+      <div style="font-family:'Orbitron',sans-serif;font-size:13px;color:#26215C;letter-spacing:4px;animation:fadeIn 1s ease forwards;">INITIALIZING UNIVERSE...</div>
+    </div>
+
+    <div class="s" id="s2">
+      <svg class="logo-svg" width="100" height="100" viewBox="0 0 72 72" fill="none">
+        <defs>
+          <radialGradient id="gg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#7F77DD" stop-opacity=".9"/>
+            <stop offset="50%" stop-color="#534AB7" stop-opacity=".4"/>
+            <stop offset="100%" stop-color="#26215C" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle cx="36" cy="36" r="30" fill="url(#gg)" opacity=".4"/>
+        <path d="M36 10 Q58 20 62 36 Q58 52 36 62 Q14 52 10 36 Q14 20 36 10Z" stroke="#26215C" stroke-width=".5" fill="none" opacity=".4"/>
+        <path d="M36 16 Q54 24 56 36 Q54 48 36 56 Q18 48 16 36 Q18 24 36 16Z" stroke="#534AB7" stroke-width=".8" fill="none" opacity=".6"/>
+        <path d="M36 22 Q50 28 50 36 Q50 44 36 50 Q22 44 22 36 Q22 28 36 22Z" stroke="#AFA9EC" stroke-width="1" fill="none" opacity=".8"/>
+        <circle cx="36" cy="36" r="8" fill="#26215C" stroke="#7F77DD" stroke-width="1.5"/>
+        <circle cx="36" cy="36" r="4" fill="#7F77DD"/>
+        <circle cx="36" cy="36" r="2" fill="#EEEDFE"/>
+        <circle cx="52" cy="20" r="2.5" fill="#EF9F27"/>
+        <circle cx="56" cy="36" r="1.5" fill="#AFA9EC" opacity=".7"/>
+        <circle cx="20" cy="50" r="1.5" fill="#AFA9EC" opacity=".5"/>
+      </svg>
+      <div class="logo-text">星渊</div>
+      <div class="logo-sub">XING YUAN · DEEP SPACE EXPLORER</div>
+    </div>
+
+    <div class="s" id="s3">
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+        <div class="poem-line" id="p1">光从深渊来</div>
+        <div class="poem-line highlight" id="p2">知识像星光</div>
+        <div class="poem-line" id="p3">穿越亿万年的黑暗</div>
+        <div class="poem-line highlight" id="p4">照亮此刻的你</div>
+      </div>
+    </div>
+
+    <div class="s" id="s4">
+      <div style="max-width:320px;">
+        <div class="bg-text" id="b1" style="font-size:12px;color:#534AB7;letter-spacing:3px;margin-bottom:20px;">· 关于星渊 ·</div>
+        <div class="bg-text" id="b2">这是一个</div>
+        <div class="bg-text" id="b3"><span class="bg-accent">二年级小朋友</span>和<span class="bg-accent">爸爸</span></div>
+        <div class="bg-text" id="b4">一起探索宇宙的故事</div>
+        <div class="bg-text" id="b5" style="margin-top:20px;font-size:12px;color:#3C3489;letter-spacing:2px;">用代码丈量星辰大海</div>
+      </div>
+    </div>
+
+    <div class="s" id="s5">
+      <div class="touch-orb" onclick="nextStage()" id="orb">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="8" fill="#7F77DD" opacity=".8"/>
+          <circle cx="16" cy="16" r="4" fill="#EEEDFE"/>
+          <circle cx="22" cy="10" r="2" fill="#EF9F27"/>
+        </svg>
+      </div>
+      <div class="touch-hint">触碰星光，开启你的探索</div>
+    </div>
+
+    <div class="s" id="s6">
+      <div class="form-card">
+        <div class="form-title">创建你的星际档案</div>
+        <div class="field">
+          <label class="field-label">你的名字</label>
+          <input type="text" placeholder="输入你的名字"/>
+        </div>
+        <div class="field">
+          <label class="field-label">年级</label>
+          <select><option value="">选择年级</option><option>一年级</option><option>二年级</option><option selected>三年级</option><option>四年级</option><option>五年级</option><option>六年级</option></select>
+        </div>
+        <div class="field">
+          <label class="field-label">学校名称</label>
+          <input type="text" placeholder="输入学校名称"/>
+        </div>
+        <div class="field">
+          <label class="field-label">选择你的宇航员</label>
+          <div class="avatar-grid">
+            <div class="av on">👨‍🚀</div>
+            <div class="av">🧑‍🚀</div>
+            <div class="av">👩‍🚀</div>
+            <div class="av">🧒</div>
+          </div>
+        </div>
+        <button class="start-btn" onclick="alert('开始探索！')">开始探索宇宙 →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const W=document.getElementById('uni');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let cw,ch,stars=[],particles=[];
+
+function resize(){
+  cw=cv.width=W.offsetWidth;
+  ch=cv.height=W.offsetHeight;
+}
+resize();
+
+function mkStar(){
+  return {x:Math.random()*cw,y:Math.random()*ch,r:Math.random()*1.5+.3,a:Math.random(),da:Math.random()*.01-.005,vx:(Math.random()-.5)*.1,vy:(Math.random()-.5)*.1};
+}
+for(let i=0;i<180;i++) stars.push(mkStar());
+
+function mkParticle(x,y){
+  const a=Math.random()*Math.PI*2;
+  const s=Math.random()*4+1;
+  return {x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,r:Math.random()*3+1,c:`hsl(${240+Math.random()*40},70%,${60+Math.random()*30}%)`};
+}
+
+let cur=1;
+const TOTAL=6;
+
+function drawBg(){
+  ctx.fillStyle='rgba(0,0,0,.15)';
+  ctx.fillRect(0,0,cw,ch);
+  stars.forEach(s=>{
+    s.x+=s.vx; s.y+=s.vy; s.a+=s.da;
+    if(s.a<0)s.da=Math.abs(s.da);
+    if(s.a>1)s.da=-Math.abs(s.da);
+    if(s.x<0)s.x=cw; if(s.x>cw)s.x=0;
+    if(s.y<0)s.y=ch; if(s.y>ch)s.y=0;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,195,255,${s.a*(.3+cur*.1)})`;
+    ctx.fill();
+  });
+  particles=particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vx*=.95; p.vy*=.95; p.life-=.025;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);
+    ctx.fillStyle=p.c.replace(')',`,${p.life})`).replace('hsl','hsla');
+    ctx.fill();
+    return p.life>0;
+  });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+function updateProg(){
+  const pg=document.getElementById('prog');
+  pg.innerHTML=[...Array(TOTAL)].map((_,i)=>`<div class="dot ${i+1===cur?'on':''}"></div>`).join('');
+}
+
+function showStage(n){
+  document.querySelectorAll('.s').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('s'+n);
+  if(el){el.classList.add('active');}
+  cur=n; updateProg();
+  if(n===1)document.getElementById('skip').style.display='block';
+  if(n===6)document.getElementById('skip').style.display='none';
+}
+
+function nextStage(){
+  const ctr=cw/2, ctr_y=ch/2;
+  for(let i=0;i<80;i++) particles.push(mkParticle(ctr,ctr_y));
+  if(cur<TOTAL) showStage(cur+1);
+}
+
+function skipTo7(){for(let i=0;i<80;i++)particles.push(mkParticle(cw/2,ch/2)); showStage(6);}
+
+document.querySelectorAll('.av').forEach(a=>{
+  a.onclick=()=>{document.querySelectorAll('.av').forEach(x=>x.classList.remove('on'));a.classList.add('on');};
+});
+
+updateProg();
+
+const timings=[
+  {s:2, t:1200},
+  {s:3, t:4500},
+  {s:4, t:9500},
+  {s:5, t:15000},
+];
+
+timings.forEach(({s,t})=>setTimeout(()=>{if(cur<s)showStage(s);},t));
+
+setTimeout(()=>{
+  ['p1','p2','p3','p4'].forEach((id,i)=>{
+    setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*700);
+  });
+},4800);
+
+setTimeout(()=>{
+  ['b1','b2','b3','b4','b5'].forEach((id,i)=>{
+    setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*500);
+  });
+},9800);
+</script>

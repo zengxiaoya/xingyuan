@@ -1,0 +1,408 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.page{background:#04020f;min-height:760px;border-radius:20px;overflow:hidden;position:relative;font-family:system-ui,sans-serif;}
+canvas.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+canvas.planet{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+.overlay{position:absolute;inset:0;z-index:2;pointer-events:none;}
+.ui{position:relative;z-index:10;display:flex;flex-direction:column;min-height:760px;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;}
+.back-btn{font-size:11px;color:#AFA9EC;cursor:pointer;display:flex;align-items:center;gap:5px;padding:5px 12px;border:0.5px solid rgba(83,74,183,.35);border-radius:20px;transition:all .2s;background:rgba(10,8,32,.5);}
+.back-btn:hover{color:#EEEDFE;border-color:#7F77DD;}
+.lv-pill{font-family:'Orbitron',sans-serif;font-size:10px;color:#EEEDFE;letter-spacing:2px;background:rgba(10,8,32,.6);border:0.5px solid rgba(127,119,221,.4);border-radius:20px;padding:5px 14px;}
+.score-badge{display:flex;align-items:center;gap:4px;background:rgba(10,8,32,.5);border:0.5px solid rgba(239,159,39,.3);border-radius:20px;padding:5px 10px;}
+
+.prog-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:0 20px 8px;}
+.prog-dot{width:28px;height:28px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;transition:all .4s;}
+.prog-line{flex:1;height:1px;max-width:60px;transition:background .4s;}
+
+.scene{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:8px 20px 20px;gap:12px;}
+
+.sci-strip{display:flex;align-items:center;gap:10px;background:rgba(4,2,15,.55);border:0.5px solid rgba(83,74,183,.25);border-radius:10px;padding:8px 14px;width:100%;max-width:580px;}
+.sci-av{width:30px;height:30px;border-radius:50%;background:#1a1040;border:1px solid #534AB7;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sci-q{font-size:10px;color:#7F77DD;font-style:italic;line-height:1.5;}
+
+.qcard{width:100%;max-width:580px;background:rgba(8,5,28,.82);border:0.5px solid rgba(127,119,221,.5);border-radius:20px;padding:22px 22px 18px;transition:transform .15s;}
+.qtype{font-size:10px;color:#7F77DD;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.qtype-dot{width:5px;height:5px;border-radius:50%;background:#7F77DD;}
+.qtext{font-size:15px;color:#EEEDFE;line-height:1.75;margin-bottom:18px;}
+.opts{display:flex;flex-direction:column;gap:9px;}
+.opt{padding:11px 15px;border-radius:12px;border:0.5px solid rgba(83,74,183,.35);background:rgba(83,74,183,.07);color:#AFA9EC;cursor:pointer;font-size:13px;transition:all .2s;display:flex;align-items:center;gap:10px;}
+.opt:hover{border-color:#7F77DD;background:rgba(127,119,221,.14);color:#EEEDFE;transform:translateX(4px);}
+.opt.correct{border-color:#1D9E75;background:rgba(29,158,117,.18);color:#5DCAA5;pointer-events:none;}
+.opt.wrong{border-color:#E24B4A;background:rgba(226,75,74,.12);color:#F09595;pointer-events:none;}
+.opt.dim{pointer-events:none;opacity:.35;}
+.okey{width:20px;height:20px;border-radius:5px;background:rgba(83,74,183,.2);border:0.5px solid rgba(83,74,183,.4);display:flex;align-items:center;justify-content:center;font-size:10px;color:#7F77DD;flex-shrink:0;}
+.inp{width:100%;padding:11px 14px;background:rgba(83,74,183,.07);border:0.5px solid rgba(83,74,183,.4);border-radius:12px;color:#EEEDFE;font-size:13px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:#7F77DD;}
+.ta{width:100%;min-height:80px;padding:11px 14px;background:rgba(83,74,183,.07);border:0.5px solid rgba(83,74,183,.4);border-radius:12px;color:#EEEDFE;font-size:13px;outline:none;resize:none;line-height:1.6;transition:border-color .2s;}
+.ta:focus{border-color:#7F77DD;}
+.sub-btn{margin-top:9px;width:100%;padding:10px;background:rgba(127,119,221,.18);border:0.5px solid #7F77DD;border-radius:10px;color:#EEEDFE;font-size:12px;cursor:pointer;transition:all .2s;}
+.sub-btn:hover{background:rgba(127,119,221,.3);}
+.sub-btn:disabled{opacity:.35;cursor:default;}
+
+.nova-row{width:100%;max-width:580px;display:flex;gap:9px;align-items:flex-start;}
+.nova-ico{width:26px;height:26px;border-radius:50%;background:#0f0830;border:1px solid #7F77DD;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.nova-bubble{flex:1;background:rgba(8,5,28,.75);border:0.5px solid rgba(83,74,183,.35);border-radius:12px;padding:10px 14px;font-size:12px;color:#AFA9EC;line-height:1.65;min-height:42px;}
+.cursor{display:inline-block;width:2px;height:12px;background:#7F77DD;animation:blink .8s infinite;vertical-align:middle;margin-left:1px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.next-btn{width:100%;max-width:580px;padding:13px;background:#7F77DD;border:none;border-radius:14px;color:#EEEDFE;font-size:13px;font-weight:500;cursor:pointer;font-family:'Orbitron',sans-serif;letter-spacing:1px;transition:all .2s;opacity:0;pointer-events:none;}
+.next-btn.on{opacity:1;pointer-events:auto;animation:riseUp .4s ease forwards;}
+.next-btn:hover{background:#9088e8;}
+.next-btn:active{transform:scale(.97);}
+@keyframes riseUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.fullscreen-fx{position:absolute;inset:0;z-index:40;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
+.fullscreen-fx.show{opacity:1;}
+.fx-text{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:700;letter-spacing:4px;text-align:center;}
+.fx-sub{font-size:13px;letter-spacing:2px;margin-top:8px;text-align:center;}
+.particle{position:absolute;border-radius:50%;pointer-events:none;z-index:45;}
+
+.complete-card{width:100%;max-width:520px;background:rgba(8,5,28,.92);border:0.5px solid #7F77DD;border-radius:20px;padding:28px;text-align:center;animation:riseUp .6s ease forwards;}
+</style>
+
+<div class="page" id="page">
+  <canvas class="bg" id="bgCv"></canvas>
+  <canvas class="planet" id="planetCv"></canvas>
+  <div class="overlay" id="overlay"></div>
+  <div class="fullscreen-fx" id="fx">
+    <div class="fx-text" id="fxText"></div>
+    <div class="fx-sub" id="fxSub"></div>
+  </div>
+  <div class="ui">
+    <div class="topbar">
+      <div class="back-btn" onclick="alert('返回星图')">← 星图</div>
+      <div class="lv-pill" id="lvPill">太阳系 · LV 1</div>
+      <div class="score-badge">
+        <svg width="11" height="11" viewBox="0 0 12 12"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9 3,11 3.5,7.5 1,5 4.5,4.5" fill="#EF9F27"/></svg>
+        <span style="font-size:11px;color:#EF9F27;font-weight:500;" id="scoreEl">42</span>
+      </div>
+    </div>
+
+    <div class="prog-row" id="progRow"></div>
+
+    <div class="scene" id="scene">
+      <div class="sci-strip" id="sciStrip">
+        <div class="sci-av" id="sciAv">🔭</div>
+        <div class="sci-q" id="sciQ">"给我一个支点，我能撬动整个地球。" ——伽利略</div>
+      </div>
+      <div class="qcard" id="qcard">
+        <div class="qtype"><div class="qtype-dot"></div><span id="qtypeEl">选择题</span></div>
+        <div class="qtext" id="qtextEl"></div>
+        <div class="opts" id="optsEl"></div>
+      </div>
+      <div class="nova-row">
+        <div class="nova-ico">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="#7F77DD" stroke-width=".8"/>
+            <circle cx="7" cy="7" r="3" fill="#7F77DD" opacity=".7"/>
+            <circle cx="7" cy="7" r="1.3" fill="#EEEDFE"/>
+          </svg>
+        </div>
+        <div class="nova-bubble" id="novaBubble"><span class="cursor"></span></div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQ()">下一题 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const pg=document.getElementById('page');
+const bgCv=document.getElementById('bgCv');
+const plCv=document.getElementById('planetCv');
+const bctx=bgCv.getContext('2d');
+const pctx=plCv.getContext('2d');
+let W,H,bStars=[],pt=0,planetAngle=0;
+
+const qs=[
+  {type:'选择题',planet:{r:90,x:.78,y:.38,c1:'#1a3a6e',c2:'#0d1f4a',ring:true,ringC:'rgba(100,150,220,.25)'},
+   text:'太阳系中，距离太阳最远的行星是哪一颗？',
+   opts:['木星','土星','天王星','海王星'],ans:3,
+   sci:'哥白尼',sciAv:'🌍',
+   quote:'"我们绕太阳而转，而非太阳绕我们。" ——哥白尼',
+   hint:'想想太阳系八大行星从近到远的顺序，数到第八颗是什么？',
+   ok:'太棒了！海王星是距离太阳最远的行星，离太阳约45亿公里，旅行者2号飞了12年才到达！',
+   fail:'再想想！答案是"海"开头的那颗，太阳系第八大行星。'},
+  {type:'猜谜题',planet:{r:110,x:.75,y:.4,c1:'#6b3a0a',c2:'#3d1f05',ring:false,spot:true},
+   text:'我是太阳系最大的行星，身上有一个已经持续了超过350年的超级风暴，科学家叫它"大红斑"。请问我是谁？',
+   opts:[],ans:-1,keyword:'木星',
+   sci:'伽利略',sciAv:'🔭',
+   quote:'"追求知识，然后传授它，这就是我的使命。" ——伽利略',
+   hint:'这颗行星是太阳系里最大的，身上有个像大红眼睛的风暴。',
+   ok:'答对啦！木星的大红斑是一场持续数百年的超级风暴，比整个地球还大！太厉害了！',
+   fail:'再猜猜！提示：它是太阳系最大的行星，有很多颗卫星围绕它转。'},
+  {type:'创意题',planet:{r:80,x:.76,y:.36,c1:'#3a1a0a',c2:'#1f0d05',ring:false,dust:true},
+   text:'如果你是第一个登上火星的宇航员，你最想带什么去？为什么？',
+   opts:[],ans:-2,
+   sci:'卡尔·萨根',sciAv:'🌌',
+   quote:'"宇宙是我们所知道的最广大的东西。" ——卡尔·萨根',
+   hint:'',ok:'',fail:''},
+];
+
+let cur=0,score=42,answered=false;
+
+function resize(){
+  W=bgCv.width=plCv.width=pg.offsetWidth;
+  H=bgCv.height=plCv.height=pg.offsetHeight;
+  bStars=[];
+  for(let i=0;i<180;i++) bStars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.3+.2,a:Math.random(),da:(Math.random()-.5)*.005});
+}
+
+function drawBg(){
+  pt+=.016; planetAngle+=.004;
+  bctx.fillStyle='rgba(4,2,15,.18)'; bctx.fillRect(0,0,W,H);
+  bStars.forEach(s=>{
+    s.a+=s.da; if(s.a<.05)s.da=Math.abs(s.da); if(s.a>.9)s.da=-Math.abs(s.da);
+    bctx.beginPath(); bctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    bctx.fillStyle=`rgba(200,195,255,${s.a*.5})`; bctx.fill();
+  });
+  drawPlanet();
+  requestAnimationFrame(drawBg);
+}
+
+function drawPlanet(){
+  const q=qs[cur]; const p=q.planet;
+  pctx.clearRect(0,0,W,H);
+  const cx=p.x*W, cy=p.y*H, r=p.r;
+
+  // nebula glow
+  const ng=pctx.createRadialGradient(cx,cy,0,cx,cy,r*2.5);
+  ng.addColorStop(0,p.c1.replace(')',',0.12)').replace('rgb','rgba')||'rgba(100,100,200,.08)');
+  ng.addColorStop(1,'transparent');
+  pctx.fillStyle=ng; pctx.fillRect(0,0,W,H);
+
+  // ring (Saturn-style)
+  if(p.ring){
+    pctx.save(); pctx.translate(cx,cy); pctx.rotate(-.35);
+    pctx.beginPath(); pctx.ellipse(0,0,r*1.7,r*.45,0,0,Math.PI*2);
+    pctx.strokeStyle=p.ringC; pctx.lineWidth=12; pctx.stroke();
+    pctx.beginPath(); pctx.ellipse(0,0,r*1.45,r*.38,0,0,Math.PI*2);
+    pctx.strokeStyle='rgba(140,180,255,.12)'; pctx.lineWidth=6; pctx.stroke();
+    pctx.restore();
+  }
+
+  // planet body
+  const grd=pctx.createRadialGradient(cx-r*.3,cy-r*.3,r*.1,cx,cy,r);
+  grd.addColorStop(0,lighten(p.c1)); grd.addColorStop(.5,p.c1); grd.addColorStop(1,p.c2);
+  pctx.beginPath(); pctx.arc(cx,cy,r,0,Math.PI*2);
+  pctx.fillStyle=grd; pctx.fill();
+
+  // surface bands
+  pctx.save(); pctx.beginPath(); pctx.arc(cx,cy,r,0,Math.PI*2); pctx.clip();
+  for(let i=0;i<5;i++){
+    const by=cy-r+r*.35*i+Math.sin(pt*.3+i)*.5;
+    pctx.fillStyle=`rgba(255,255,255,${.02+.01*i})`;
+    pctx.fillRect(cx-r,by,r*2,r*.12);
+  }
+
+  // red spot for Jupiter
+  if(p.spot){
+    const sx=cx+r*.2+Math.cos(pt*.5)*r*.05;
+    const sy=cy+r*.1;
+    pctx.beginPath(); pctx.ellipse(sx,sy,r*.22,r*.14,0,0,Math.PI*2);
+    pctx.fillStyle='rgba(180,60,30,.6)'; pctx.fill();
+    pctx.beginPath(); pctx.ellipse(sx,sy,r*.15,r*.09,0,0,Math.PI*2);
+    pctx.fillStyle='rgba(210,80,40,.5)'; pctx.fill();
+  }
+
+  // dust ring for Mars
+  if(p.dust){
+    for(let i=0;i<3;i++){
+      const da=planetAngle+i*(Math.PI*2/3);
+      const dx=cx+Math.cos(da)*(r*1.3), dy=cy+Math.sin(da)*(r*.4);
+      pctx.beginPath(); pctx.arc(dx,dy,2,0,Math.PI*2);
+      pctx.fillStyle='rgba(200,120,60,.4)'; pctx.fill();
+    }
+  }
+  pctx.restore();
+
+  // atmosphere glow
+  const ag=pctx.createRadialGradient(cx,cy,r*.9,cx,cy,r*1.15);
+  ag.addColorStop(0,'transparent'); ag.addColorStop(1,p.c1.replace('rgb','rgba').replace(')',',0.15)')||'rgba(100,100,200,.1)');
+  pctx.beginPath(); pctx.arc(cx,cy,r*1.15,0,Math.PI*2);
+  pctx.fillStyle=ag; pctx.fill();
+}
+
+function lighten(hex){
+  try{
+    const r=parseInt(hex.slice(1,3),16)+60,g=parseInt(hex.slice(3,5),16)+60,b=parseInt(hex.slice(5,7),16)+60;
+    return `rgb(${Math.min(r,255)},${Math.min(g,255)},${Math.min(b,255)})`;
+  }catch(e){return '#aaaadd';}
+}
+
+function renderProg(){
+  const row=document.getElementById('progRow'); row.innerHTML='';
+  qs.forEach((q,i)=>{
+    if(i>0){
+      const l=document.createElement('div'); l.className='prog-line';
+      l.style.background=i<=cur?'rgba(127,119,221,.5)':'rgba(38,33,92,.4)';
+      row.appendChild(l);
+    }
+    const s=document.createElement('div'); s.className='prog-dot';
+    const done=i<cur,active=i===cur;
+    s.style.cssText=done?'background:rgba(29,158,117,.2);border-color:#1D9E75;color:#1D9E75;':
+      active?'background:rgba(127,119,221,.2);border-color:#7F77DD;color:#EEEDFE;':
+      'background:rgba(38,33,92,.4);border-color:#26215C;color:#534AB7;';
+    s.textContent=done?'✓':['Q','?','★'][i];
+    row.appendChild(s);
+  });
+}
+
+function renderQ(){
+  const q=qs[cur]; answered=false;
+  document.getElementById('qtypeEl').textContent=q.type;
+  document.getElementById('qtextEl').textContent=q.text;
+  document.getElementById('sciAv').textContent=q.sciAv;
+  document.getElementById('sciQ').textContent=q.quote;
+  document.getElementById('nextBtn').classList.remove('on');
+  const nb=document.getElementById('nextBtn');
+  nb.textContent=cur===qs.length-1?'完成关卡 🎉':'下一题 →';
+
+  typeNova(q.hint||'这道题充满想象力，写下你的想法吧！');
+
+  const od=document.getElementById('optsEl'); od.innerHTML='';
+  if(q.ans>=0){
+    ['A','B','C','D'].forEach((k,i)=>{
+      const d=document.createElement('div'); d.className='opt';
+      d.innerHTML=`<div class="okey">${k}</div>${q.opts[i]}`;
+      d.onclick=()=>{
+        if(answered)return; answered=true;
+        const ok=i===q.ans;
+        d.classList.add(ok?'correct':'wrong');
+        od.querySelectorAll('.opt').forEach((o,oi)=>{
+          if(oi!==i)o.classList.add(oi===q.ans&&!ok?'correct':'dim');
+        });
+        if(ok){typeNova(q.ok);flashFx(true);spawnParticles(true);addScore(10);}
+        else{typeNova(q.fail);flashFx(false);shakeCard();spawnParticles(false);}
+        setTimeout(()=>document.getElementById('nextBtn').classList.add('on'),1200);
+      };
+      od.appendChild(d);
+    });
+  } else if(q.ans===-1){
+    const inp=document.createElement('input'); inp.className='inp'; inp.placeholder='输入你的答案...';
+    od.appendChild(inp);
+    const btn=document.createElement('button'); btn.className='sub-btn'; btn.textContent='确认答案';
+    btn.onclick=()=>{
+      if(answered)return;
+      const val=inp.value.trim();
+      if(!val){typeNova('先写点什么吧～');return;}
+      answered=true;
+      const ok=val.includes(q.keyword);
+      inp.style.borderColor=ok?'#1D9E75':'#E24B4A';
+      inp.style.color=ok?'#5DCAA5':'#F09595';
+      inp.disabled=true; btn.disabled=true;
+      if(ok){typeNova(q.ok);flashFx(true);spawnParticles(true);addScore(10);}
+      else{typeNova(q.fail);flashFx(false);shakeCard();}
+      setTimeout(()=>document.getElementById('nextBtn').classList.add('on'),1200);
+    };
+    od.appendChild(btn);
+  } else {
+    const ta=document.createElement('textarea'); ta.className='ta'; ta.placeholder='写下你的想法，NOVA会认真看的...';
+    od.appendChild(ta);
+    const btn=document.createElement('button'); btn.className='sub-btn'; btn.textContent='提交我的想法 →';
+    btn.onclick=()=>{
+      if(answered)return;
+      const val=ta.value.trim();
+      if(!val){typeNova('先写点什么吧，哪怕一句话也好～');return;}
+      answered=true; ta.disabled=true; btn.disabled=true;
+      const fb=`太有创意了！"${val.slice(0,18)}${val.length>18?'...':''}" NOVA觉得这个想法非常棒，宇宙欢迎有想象力的探险家！`;
+      typeNova(fb); flashFx(true,'CREATIVE!','创意无限！'); spawnParticles(true); addScore(8);
+      setTimeout(()=>document.getElementById('nextBtn').classList.add('on'),1400);
+    };
+    od.appendChild(btn);
+  }
+}
+
+function nextQ(){
+  if(cur<qs.length-1){
+    cur++; renderProg(); renderQ();
+  } else {showComplete();}
+}
+
+let typeTimer=null;
+function typeNova(text){
+  const el=document.getElementById('novaBubble');
+  if(typeTimer)clearInterval(typeTimer);
+  el.innerHTML=''; let i=0;
+  typeTimer=setInterval(()=>{
+    el.innerHTML=text.slice(0,i)+'<span class="cursor"></span>'; i++;
+    if(i>text.length){clearInterval(typeTimer);el.innerHTML=text;}
+  },22);
+}
+
+function addScore(n){
+  score+=n; const el=document.getElementById('scoreEl');
+  el.textContent=score; el.style.transform='scale(1.5)'; el.style.color='#FAC775';
+  setTimeout(()=>{el.style.transform='scale(1)';el.style.transition='transform .3s';el.style.color='#EF9F27';},350);
+}
+
+function shakeCard(){
+  const c=document.getElementById('qcard');
+  [[-10,80],[10,160],[-6,240],[6,320],[0,400]].forEach(([x,d])=>
+    setTimeout(()=>c.style.transform=`translateX(${x}px)`,d));
+}
+
+function flashFx(ok,title,sub){
+  const fx=document.getElementById('fx');
+  const ft=document.getElementById('fxText');
+  const fs=document.getElementById('fxSub');
+  ft.textContent=title||(ok?'正确！':'再试试！');
+  ft.style.color=ok?'#1D9E75':'#E24B4A';
+  fs.textContent=sub||(ok?'+ 10 星星积分':'继续加油！');
+  fs.style.color=ok?'#EF9F27':'#AFA9EC';
+  fx.classList.add('show');
+  setTimeout(()=>fx.classList.remove('show'),ok?1600:1200);
+}
+
+function spawnParticles(ok){
+  const colors=ok?['#1D9E75','#5DCAA5','#EF9F27','#7F77DD','#EEEDFE']:['#E24B4A','#F09595','#534AB7'];
+  const cx=W/2, cy=H*.45;
+  const count=ok?70:25;
+  for(let i=0;i<count;i++){
+    const div=document.createElement('div'); div.className='particle';
+    const sz=Math.random()*(ok?8:5)+2;
+    div.style.cssText=`width:${sz}px;height:${sz}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${cx}px;top:${cy}px;opacity:1;`;
+    pg.appendChild(div);
+    const angle=Math.random()*Math.PI*2;
+    const spd=(ok?5:3)+Math.random()*(ok?12:5);
+    let x=cx,y=cy,vx=Math.cos(angle)*spd,vy=Math.sin(angle)*spd,life=1;
+    const iv=setInterval(()=>{
+      x+=vx; y+=vy; vy+=ok?.15:.25; life-=ok?.017:.022;
+      div.style.cssText=`width:${sz}px;height:${sz}px;background:${colors[Math.floor(Math.random()*colors.length)]};position:absolute;border-radius:50%;pointer-events:none;z-index:45;left:${x}px;top:${y}px;opacity:${Math.max(life,0)};`;
+      if(life<=0){clearInterval(iv);div.remove();}
+    },16);
+  }
+}
+
+function showComplete(){
+  const scene=document.getElementById('scene');
+  scene.innerHTML=`<div class="complete-card">
+    <div style="font-size:56px;margin-bottom:12px;">🏅</div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:20px;color:#EF9F27;letter-spacing:3px;margin-bottom:6px;">关卡完成！</div>
+    <div style="font-size:12px;color:#7F77DD;letter-spacing:2px;margin-bottom:24px;">太阳系 Lv1 · 行星基础知识</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;">
+      <div style="background:rgba(239,159,39,.1);border:0.5px solid rgba(239,159,39,.3);border-radius:10px;padding:12px;">
+        <div style="font-size:22px;color:#EF9F27;font-weight:500;">+28</div>
+        <div style="font-size:10px;color:#534AB7;margin-top:3px;">星星积分</div>
+      </div>
+      <div style="background:rgba(29,158,117,.1);border:0.5px solid rgba(29,158,117,.3);border-radius:10px;padding:12px;">
+        <div style="font-size:22px;color:#1D9E75;">✓</div>
+        <div style="font-size:10px;color:#534AB7;margin-top:3px;">徽章解锁</div>
+      </div>
+      <div style="background:rgba(127,119,221,.1);border:0.5px solid rgba(127,119,221,.3);border-radius:10px;padding:12px;">
+        <div style="font-size:22px;color:#7F77DD;">×2</div>
+        <div style="font-size:10px;color:#534AB7;margin-top:3px;">科学家解锁</div>
+      </div>
+    </div>
+    <button onclick="alert('返回星图')" style="width:100%;padding:13px;background:#7F77DD;border:none;border-radius:12px;color:#EEEDFE;font-family:'Orbitron',sans-serif;font-size:12px;cursor:pointer;letter-spacing:1px;">返回星图 →</button>
+  </div>`;
+  for(let i=0;i<5;i++) setTimeout(()=>spawnParticles(true),i*300);
+  typeNova('哇！你完成了太阳系Lv1！哥白尼和伽利略为你骄傲！快去星图看看解锁了什么吧 🚀');
+}
+
+setTimeout(()=>{resize();drawBg();renderProg();renderQ();},80);
+window.addEventListener('resize',resize);
+</script>

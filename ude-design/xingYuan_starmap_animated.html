@@ -1,0 +1,299 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.page{background:#04020f;min-height:700px;border-radius:20px;overflow:hidden;position:relative;font-family:system-ui,sans-serif;}
+.ui{position:relative;z-index:10;display:flex;flex-direction:column;height:700px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid rgba(83,74,183,.2);}
+.logo-sm{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:#EEEDFE;letter-spacing:4px;}
+.stars-badge{display:flex;align-items:center;gap:4px;background:rgba(239,159,39,.1);border:0.5px solid rgba(239,159,39,.3);border-radius:20px;padding:4px 10px;}
+.stars-badge span{font-size:12px;color:#EF9F27;font-weight:500;}
+.avatar{width:32px;height:32px;border-radius:50%;background:#26215C;border:1.5px solid #534AB7;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.user-name{font-size:12px;color:#AFA9EC;}
+.map-area{flex:1;position:relative;overflow:hidden;}
+.nova-btn{position:absolute;bottom:20px;right:20px;width:52px;height:52px;border-radius:50%;background:rgba(127,119,221,.15);border:1.5px solid #7F77DD;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:20;transition:all .3s;}
+.nova-btn:hover{background:rgba(127,119,221,.3);transform:scale(1.1);}
+.nova-label{position:absolute;bottom:80px;right:14px;font-size:10px;color:#7F77DD;letter-spacing:.08em;text-align:center;width:64px;z-index:20;}
+.legend{position:absolute;bottom:20px;left:20px;display:flex;flex-direction:column;gap:6px;z-index:20;}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#534AB7;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+.progress-bar{height:3px;background:rgba(127,119,221,.1);margin:0 20px;}
+.progress-fill{height:100%;background:#7F77DD;border-radius:2px;width:22%;}
+.progress-label{display:flex;justify-content:space-between;padding:6px 20px 0;font-size:10px;color:#534AB7;}
+.tooltip{position:absolute;background:rgba(26,16,64,.96);border:0.5px solid #534AB7;border-radius:10px;padding:10px 14px;font-size:12px;color:#EEEDFE;pointer-events:none;z-index:30;min-width:150px;opacity:0;transition:opacity .2s;}
+.tooltip.show{opacity:1;}
+.tt-title{font-weight:500;margin-bottom:3px;font-size:13px;}
+.tt-sub{color:#AFA9EC;font-size:11px;line-height:1.7;}
+.tt-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;margin-top:5px;}
+</style>
+
+<div class="page" id="page">
+  <div class="ui">
+    <div class="topbar">
+      <div class="logo-sm">星渊</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="stars-badge">
+          <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9 3,11 3.5,7.5 1,5 4.5,4.5" fill="#EF9F27"/></svg>
+          <span>42</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar">👨‍🚀</div>
+          <div class="user-name">小明</div>
+        </div>
+      </div>
+    </div>
+    <div class="progress-label"><span>探索进度</span><span style="color:#7F77DD;">2 / 9 关卡</span></div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <div class="map-area" id="mapArea">
+      <canvas id="cv" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+      <div class="nova-btn" onclick="alert('NOVA船长在线！')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#7F77DD" stroke-width="1"/>
+          <circle cx="12" cy="12" r="5" fill="#7F77DD" opacity=".7"/>
+          <circle cx="12" cy="12" r="2.5" fill="#EEEDFE"/>
+        </svg>
+      </div>
+      <div class="nova-label">NOVA<br/>船长</div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#1D9E75;"></div>已通关</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#7F77DD;"></div>可挑战</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#26215C;border:1px solid #534AB7;"></div>未解锁</div>
+      </div>
+    </div>
+  </div>
+  <div class="tooltip" id="tt"></div>
+</div>
+
+<script>
+const pg=document.getElementById('page');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+const area=document.getElementById('mapArea');
+let W,H,t=0;
+
+const nodes=[
+  {id:'sol1',x:.18,y:.22,theme:'太阳系',lv:1,label:'行星基础',state:'done',scientists:'哥白尼·伽利略',floatAmp:4,floatSpd:.8,floatOff:0},
+  {id:'exp1',x:.50,y:.15,theme:'宇宙探索',lv:1,label:'宇航员与火箭',state:'done',scientists:'加加林·阿姆斯特朗',floatAmp:5,floatSpd:.6,floatOff:1.2},
+  {id:'uni1',x:.82,y:.22,theme:'宇宙尺度',lv:1,label:'星系与光年',state:'active',scientists:'哈勃',floatAmp:4,floatSpd:.9,floatOff:2.1},
+  {id:'sol2',x:.18,y:.52,theme:'太阳系',lv:2,label:'探测器历史',state:'active',scientists:'萨根·冯布劳恩',floatAmp:3,floatSpd:.7,floatOff:.5},
+  {id:'exp2',x:.50,y:.48,theme:'宇宙探索',lv:2,label:'空间站生活',state:'locked',scientists:'王亚平',floatAmp:3,floatSpd:.5,floatOff:1.8},
+  {id:'uni2',x:.82,y:.52,theme:'宇宙尺度',lv:2,label:'黑洞与星云',state:'locked',scientists:'霍金·Bouman',floatAmp:3,floatSpd:.8,floatOff:3.0},
+  {id:'sol3',x:.25,y:.80,theme:'太阳系',lv:3,label:'极端环境',state:'locked',scientists:'德雷克',floatAmp:2,floatSpd:.6,floatOff:.9},
+  {id:'exp3',x:.50,y:.85,theme:'宇宙探索',lv:3,label:'星际移民',state:'locked',scientists:'马斯克',floatAmp:2,floatSpd:.7,floatOff:2.4},
+  {id:'uni3',x:.75,y:.80,theme:'宇宙尺度',lv:3,label:'宇宙大爆炸',state:'locked',scientists:'勒梅特',floatAmp:2,floatSpd:.5,floatOff:1.5},
+];
+
+const edges=[
+  ['sol1','exp1'],['exp1','uni1'],
+  ['sol1','sol2'],['exp1','exp2'],['uni1','uni2'],
+  ['sol2','exp2'],['exp2','uni2'],
+  ['sol2','sol3'],['exp2','exp3'],['uni2','uni3'],
+  ['sol3','exp3'],['exp3','uni3'],
+];
+
+let bgStars=[];
+function mkStar(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.3+.2,a:Math.random(),da:(Math.random()-.5)*.006,vx:(Math.random()-.5)*.05,vy:(Math.random()-.5)*.05};}
+
+function resize(){
+  W=cv.width=area.offsetWidth;
+  H=cv.height=area.offsetHeight;
+  bgStars=[];
+  for(let i=0;i<220;i++) bgStars.push(mkStar());
+}
+
+function getPos(n){
+  const fy=Math.sin(t*n.floatSpd+n.floatOff)*n.floatAmp;
+  return{x:n.x*W, y:n.y*H+fy};
+}
+
+let flowOffset=0;
+
+function draw(){
+  t+=0.016; flowOffset=(flowOffset+1)%200;
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle='#04020f';
+  ctx.fillRect(0,0,W,H);
+
+  // bg stars
+  bgStars.forEach(s=>{
+    s.a+=s.da; if(s.a<.05)s.da=Math.abs(s.da); if(s.a>.95)s.da=-Math.abs(s.da);
+    s.x+=s.vx; s.y+=s.vy;
+    if(s.x<0)s.x=W; if(s.x>W)s.x=0;
+    if(s.y<0)s.y=H; if(s.y>H)s.y=0;
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,195,255,${s.a*.55})`; ctx.fill();
+  });
+
+  // nebula clouds (subtle)
+  [[.2,.3,'rgba(83,74,183,.04)'],[.7,.5,'rgba(29,158,117,.03)'],[.5,.7,'rgba(55,138,221,.03)']].forEach(([nx,ny,c])=>{
+    const grd=ctx.createRadialGradient(nx*W,ny*H,0,nx*W,ny*H,W*.25);
+    grd.addColorStop(0,c); grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  });
+
+  // zone dividers
+  [.35,.67].forEach(xr=>{
+    ctx.strokeStyle='rgba(38,33,92,.4)'; ctx.lineWidth=.5;
+    ctx.setLineDash([3,8]);
+    ctx.beginPath(); ctx.moveTo(xr*W,0); ctx.lineTo(xr*W,H); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // zone labels
+  const zoneLabels=[{x:.175,label:'太阳系',c:'rgba(127,119,221,.4)'},{x:.51,label:'宇宙探索',c:'rgba(55,138,221,.4)'},{x:.835,label:'宇宙尺度',c:'rgba(175,169,236,.4)'}];
+  zoneLabels.forEach(z=>{
+    ctx.fillStyle=z.c; ctx.font='10px Orbitron,system-ui'; ctx.textAlign='center';
+    ctx.fillText(z.label,z.x*W,18);
+  });
+
+  // level lines
+  [.38,.68].forEach(yr=>{
+    ctx.strokeStyle='rgba(83,74,183,.1)'; ctx.lineWidth=.5; ctx.setLineDash([2,10]);
+    ctx.beginPath(); ctx.moveTo(0,yr*H); ctx.lineTo(W,yr*H); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  ['Lv 1','Lv 2','Lv 3'].forEach((lbl,i)=>{
+    ctx.fillStyle='rgba(83,74,183,.3)'; ctx.font='9px Orbitron,system-ui'; ctx.textAlign='left';
+    ctx.fillText(lbl,6,[.08,.44,.74][i]*H);
+  });
+
+  // edges with flow animation
+  edges.forEach(([a,b])=>{
+    const na=nodes.find(n=>n.id===a), nb=nodes.find(n=>n.id===b);
+    if(!na||!nb) return;
+    const pa=getPos(na), pb=getPos(nb);
+    const unlocked=na.state!=='locked';
+    const active=na.state==='done'&&nb.state!=='locked';
+
+    // base line
+    ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y);
+    ctx.strokeStyle=active?'rgba(127,119,221,.25)':'rgba(38,33,92,.4)';
+    ctx.lineWidth=active?1:.5; ctx.setLineDash(unlocked?[]:[3,6]);
+    ctx.stroke(); ctx.setLineDash([]);
+
+    // flow dots on active edges
+    if(active){
+      for(let d=0;d<3;d++){
+        const prog=((flowOffset/200)+(d/3))%1;
+        const fx=pa.x+(pb.x-pa.x)*prog;
+        const fy=pa.y+(pb.y-pa.y)*prog;
+        const alpha=Math.sin(prog*Math.PI);
+        ctx.beginPath(); ctx.arc(fx,fy,2,0,Math.PI*2);
+        ctx.fillStyle=`rgba(127,119,221,${alpha*.8})`; ctx.fill();
+      }
+    }
+  });
+
+  // nodes
+  nodes.forEach(n=>{
+    const {x,y}=getPos(n);
+    const r=n.state==='done'?22:n.state==='active'?20:15;
+    const isDone=n.state==='done', isActive=n.state==='active';
+
+    // outer glow rings (animated)
+    if(!n.locked){
+      const ringAlpha=.15+.08*Math.sin(t*2+n.floatOff);
+      const ringR=r+10+4*Math.sin(t*1.5+n.floatOff);
+      ctx.beginPath(); ctx.arc(x,y,ringR,0,Math.PI*2);
+      ctx.strokeStyle=isDone?`rgba(29,158,117,${ringAlpha})`:isActive?`rgba(127,119,221,${ringAlpha})`:'transparent';
+      ctx.lineWidth=1; ctx.stroke();
+
+      if(isActive){
+        const ring2R=r+18+6*Math.sin(t*1.2+n.floatOff+1);
+        ctx.beginPath(); ctx.arc(x,y,ring2R,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(127,119,221,${ringAlpha*.5})`; ctx.lineWidth=.5; ctx.stroke();
+      }
+    }
+
+    // planet body
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    const bodyGrd=ctx.createRadialGradient(x-r*.3,y-r*.3,0,x,y,r);
+    if(isDone){
+      bodyGrd.addColorStop(0,'#1a4a30'); bodyGrd.addColorStop(1,'#0a2018');
+    } else if(isActive){
+      bodyGrd.addColorStop(0,'#2a1a5e'); bodyGrd.addColorStop(1,'#0f0830');
+    } else {
+      bodyGrd.addColorStop(0,'#12102a'); bodyGrd.addColorStop(1,'#06040f');
+    }
+    ctx.fillStyle=bodyGrd; ctx.fill();
+    ctx.strokeStyle=isDone?'#1D9E75':isActive?'#7F77DD':'#1a1640';
+    ctx.lineWidth=isDone?1.5:isActive?2:1; ctx.stroke();
+
+    // rotating orbit ring for active nodes
+    if(isActive){
+      ctx.save(); ctx.translate(x,y); ctx.rotate(t*.8);
+      ctx.beginPath(); ctx.ellipse(0,0,r+5,r*.4,0,0,Math.PI*2);
+      ctx.strokeStyle='rgba(127,119,221,.3)'; ctx.lineWidth=.8; ctx.stroke();
+      ctx.restore();
+      // small satellite dot
+      const sx=Math.cos(t*.8)*(r+5), sy=Math.sin(t*.8)*(r*.4);
+      ctx.beginPath(); ctx.arc(x+sx,y+sy,2,0,Math.PI*2);
+      ctx.fillStyle='rgba(174,169,236,.8)'; ctx.fill();
+    }
+
+    // icon inside node
+    ctx.textAlign='center';
+    if(isDone){
+      ctx.fillStyle='#1D9E75'; ctx.font=`bold ${r*.7}px system-ui`;
+      ctx.fillText('✓',x,y+r*.25);
+    } else if(isActive){
+      const pulse=.6+.4*Math.sin(t*3+n.floatOff);
+      ctx.beginPath(); ctx.arc(x,y,r*.4,0,Math.PI*2);
+      ctx.fillStyle=`rgba(127,119,221,${pulse})`; ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,r*.2,0,Math.PI*2);
+      ctx.fillStyle='#EEEDFE'; ctx.fill();
+    } else {
+      ctx.fillStyle='rgba(83,74,183,.5)'; ctx.font=`${r*.6}px system-ui`;
+      ctx.fillText('🔒',x,y+r*.2);
+    }
+
+    // label below
+    ctx.fillStyle=isDone?'rgba(29,158,117,.85)':isActive?'rgba(174,169,236,.9)':'rgba(83,74,183,.5)';
+    ctx.font=`${isActive?'500':'400'} 10.5px system-ui`; ctx.textAlign='center';
+    ctx.fillText(n.label,x,y+r+14);
+
+    // Lv badge
+    ctx.fillStyle=isDone?'rgba(29,158,117,.6)':isActive?'rgba(127,119,221,.7)':'rgba(38,33,92,.6)';
+    ctx.font='8px Orbitron,system-ui';
+    ctx.fillText('Lv'+n.lv,x,y-r-5);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+// tooltip
+const tt=document.getElementById('tt');
+area.addEventListener('mousemove',e=>{
+  const rect=cv.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let found=null;
+  nodes.forEach(n=>{const p=getPos(n); if(Math.hypot(mx-p.x,my-p.y)<28)found=n;});
+  if(found){
+    const sc=found.state==='done'?'#1D9E75':found.state==='active'?'#7F77DD':'#534AB7';
+    const sl=found.state==='done'?'已通关':found.state==='active'?'可挑战':'未解锁';
+    tt.innerHTML=`<div class="tt-title">${found.theme} · Lv${found.lv}</div>
+      <div class="tt-sub">${found.label}<br/>科学家：${found.scientists}</div>
+      <div class="tt-badge" style="background:${sc}22;color:${sc};border:0.5px solid ${sc}55;">${sl}</div>`;
+    const pr=pg.getBoundingClientRect();
+    tt.style.left=(e.clientX-pr.left+14)+'px';
+    tt.style.top=(e.clientY-pr.top-20)+'px';
+    tt.classList.add('show');
+    cv.style.cursor=found.state==='locked'?'default':'pointer';
+  } else { tt.classList.remove('show'); cv.style.cursor='default'; }
+});
+
+area.addEventListener('click',e=>{
+  const rect=cv.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  nodes.forEach(n=>{
+    const p=getPos(n);
+    if(Math.hypot(mx-p.x,my-p.y)<28&&n.state!=='locked')
+      alert(`进入关卡：${n.theme} Lv${n.lv} · ${n.label}`);
+  });
+});
+
+window.addEventListener('resize',()=>{resize();});
+setTimeout(()=>{resize(); draw();},100);
+</script>

@@ -1,0 +1,309 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+.demo-page{background:#04020f;border-radius:20px;min-height:680px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;}
+.demo-bg{position:absolute;inset:0;pointer-events:none;}
+.demo-hint{color:#534AB7;font-size:13px;letter-spacing:.1em;text-align:center;}
+.open-btn{margin-top:20px;padding:12px 28px;background:rgba(127,119,221,.15);border:1.5px solid #7F77DD;border-radius:24px;color:#EEEDFE;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .25s;animation:pulse 3s ease-in-out infinite;}
+.open-btn:hover{background:rgba(127,119,221,.3);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(127,119,221,.3)}50%{box-shadow:0 0 0 14px rgba(127,119,221,0)}}
+
+.nova-modal{position:absolute;inset:0;background:#04020f;border-radius:20px;display:flex;flex-direction:column;z-index:20;opacity:0;transform:scale(.96);transition:opacity .35s,transform .35s;pointer-events:none;}
+.nova-modal.open{opacity:1;transform:scale(1);pointer-events:auto;}
+
+canvas.stars-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+
+.nova-top{position:relative;z-index:10;padding:16px 20px;border-bottom:0.5px solid rgba(83,74,183,.2);display:flex;align-items:center;gap:0;}
+.back-btn{width:32px;height:32px;border-radius:50%;border:0.5px solid rgba(83,74,183,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#AFA9EC;font-size:14px;transition:all .2s;margin-right:12px;flex-shrink:0;}
+.back-btn:hover{border-color:#7F77DD;color:#EEEDFE;}
+.nova-face-section{display:flex;align-items:center;gap:14px;flex:1;}
+.face-wrap{position:relative;flex-shrink:0;}
+.status-ring{position:absolute;inset:-3px;border-radius:50%;border:1.5px solid #1D9E75;animation:statusPulse 2s ease-in-out infinite;}
+@keyframes statusPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.nova-meta{flex:1;}
+.nova-nm{font-family:'Orbitron',sans-serif;font-size:15px;color:#EEEDFE;letter-spacing:3px;}
+.nova-role{font-size:10px;color:#7F77DD;margin-top:2px;letter-spacing:.08em;}
+.nova-st{font-size:10px;margin-top:3px;display:flex;align-items:center;gap:4px;}
+.st-dot{width:5px;height:5px;border-radius:50%;background:#1D9E75;}
+
+.nova-body{position:relative;z-index:10;flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+.nova-hero{display:flex;flex-direction:column;align-items:center;padding:16px 20px 8px;border-bottom:0.5px solid rgba(83,74,183,.1);}
+.face-large-wrap{position:relative;margin-bottom:8px;}
+.face-glow{position:absolute;inset:-16px;border-radius:50%;pointer-events:none;}
+.nova-title{font-family:'Orbitron',sans-serif;font-size:11px;color:#7F77DD;letter-spacing:3px;text-align:center;}
+.nova-mood{font-size:11px;color:#534AB7;margin-top:3px;text-align:center;min-height:16px;transition:all .3s;}
+
+.msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.msgs::-webkit-scrollbar{width:2px;}
+.msgs::-webkit-scrollbar-thumb{background:#26215C;border-radius:2px;}
+.msg{display:flex;gap:8px;animation:msgIn .3s ease forwards;}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse;}
+.mbubble{max-width:72%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.7;}
+.msg.nova .mbubble{background:rgba(38,33,92,.75);border:0.5px solid rgba(83,74,183,.3);color:#EEEDFE;border-radius:4px 16px 16px 16px;}
+.msg.user .mbubble{background:rgba(127,119,221,.2);border:0.5px solid rgba(127,119,221,.4);color:#EEEDFE;border-radius:16px 4px 16px 16px;}
+.mav{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:3px;}
+.msg.nova .mav{background:#0f0830;border:1px solid #7F77DD;}
+.msg.user .mav{background:#1a1040;border:1px solid #534AB7;}
+.cursor{display:inline-block;width:2px;height:13px;background:#7F77DD;animation:blink .7s infinite;vertical-align:middle;margin-left:2px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.dots{display:flex;gap:4px;padding:3px 0;}
+.dots span{width:6px;height:6px;border-radius:50%;background:#7F77DD;animation:dot .9s infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}
+.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes dot{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+
+.quick-row{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;border-top:0.5px solid rgba(83,74,183,.12);}
+.qb{padding:5px 11px;border-radius:14px;border:0.5px solid rgba(83,74,183,.35);background:transparent;color:#AFA9EC;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.qb:hover{border-color:#7F77DD;color:#EEEDFE;background:rgba(127,119,221,.1);}
+
+.inp-row{display:flex;gap:8px;padding:12px 16px;border-top:0.5px solid rgba(83,74,183,.18);background:rgba(4,2,15,.8);}
+.cinp{flex:1;padding:10px 16px;background:rgba(83,74,183,.07);border:0.5px solid rgba(83,74,183,.35);border-radius:24px;color:#EEEDFE;font-size:13px;outline:none;transition:border-color .2s;}
+.cinp:focus{border-color:#7F77DD;}
+.cinp::placeholder{color:#3C3489;}
+.sbtn{width:38px;height:38px;border-radius:50%;background:#7F77DD;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.sbtn:hover{background:#9088e8;}
+.sbtn:active{transform:scale(.92);}
+.sbtn:disabled{background:#26215C;cursor:default;}
+</style>
+
+<div class="demo-page" id="demoPage">
+  <canvas class="stars-cv" id="starsCv"></canvas>
+  <div style="position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;">
+    <div class="demo-hint">模拟星图总览页面</div>
+    <button class="open-btn" id="openBtn" onclick="openNova()">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="#7F77DD" stroke-width="1.2"/>
+        <circle cx="10" cy="10" r="4" fill="#7F77DD" opacity=".8"/>
+        <circle cx="10" cy="10" r="2" fill="#EEEDFE"/>
+      </svg>
+      呼出 NOVA 船长
+    </button>
+  </div>
+
+  <div class="nova-modal" id="novaModal">
+    <canvas class="stars-cv" id="novaStarsCv"></canvas>
+
+    <div class="nova-top">
+      <div class="back-btn" onclick="closeNova()">←</div>
+      <div class="nova-face-section">
+        <div class="face-wrap">
+          <canvas id="faceSmall" width="44" height="44" style="border-radius:50%;border:1.5px solid #7F77DD;display:block;"></canvas>
+          <div class="status-ring"></div>
+        </div>
+        <div class="nova-meta">
+          <div class="nova-nm">N O V A</div>
+          <div class="nova-role">星际探险队长 · AI 太空向导</div>
+          <div class="nova-st" id="stEl"><div class="st-dot"></div><span style="color:#534AB7;" id="stText">在线</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nova-body">
+      <div class="nova-hero">
+        <div class="face-large-wrap">
+          <div class="face-glow" id="faceGlow"></div>
+          <canvas id="faceLarge" width="100" height="100" style="border-radius:50%;border:2px solid #7F77DD;display:block;position:relative;z-index:1;"></canvas>
+        </div>
+        <div class="nova-title">NOVA · 星际探险队长</div>
+        <div class="nova-mood" id="moodEl">随时准备回答你的太空问题 ✦</div>
+      </div>
+
+      <div class="msgs" id="msgs"></div>
+
+      <div class="quick-row">
+        <button class="qb" onclick="qs('火星上有生命吗？')">火星有生命吗？</button>
+        <button class="qb" onclick="qs('黑洞是什么？')">黑洞是什么？</button>
+        <button class="qb" onclick="qs('宇宙有多大？')">宇宙有多大？</button>
+        <button class="qb" onclick="qs('光年是什么意思？')">光年是什么？</button>
+      </div>
+
+      <div class="inp-row">
+        <input class="cinp" id="cinp" placeholder="问问 NOVA 船长..." onkeydown="if(event.key==='Enter')send()"/>
+        <button class="sbtn" id="sbtn" onclick="send()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 2L8 14L7 9L2 8Z" fill="#EEEDFE"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const dp=document.getElementById('demoPage');
+const sc=document.getElementById('starsCv');
+const nsc=document.getElementById('novaStarsCv');
+const sctx=sc.getContext('2d');
+const nsctx=nsc.getContext('2d');
+const fsCtx=document.getElementById('faceSmall').getContext('2d');
+const flCtx=document.getElementById('faceLarge').getContext('2d');
+
+let W,H,stars=[],nstars=[],ft=0,mouthOpen=0,blinkT=0,faceState='idle',busy=false;
+
+function resize(){
+  W=sc.width=nsc.width=dp.offsetWidth;
+  H=sc.height=nsc.height=dp.offsetHeight;
+  stars=[]; nstars=[];
+  for(let i=0;i<160;i++){stars.push(mkS(W,H));nstars.push(mkS(W,H));}
+}
+
+function mkS(w,h){return{x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.3+.2,a:Math.random(),da:(Math.random()-.5)*.005};}
+
+function drawStars(ctx,arr,w,h){
+  ctx.fillStyle='rgba(4,2,15,.15)'; ctx.fillRect(0,0,w,h);
+  arr.forEach(s=>{
+    s.a+=s.da; if(s.a<.05)s.da=Math.abs(s.da); if(s.a>.9)s.da=-Math.abs(s.da);
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(200,195,255,${s.a*.5})`; ctx.fill();
+  });
+}
+
+function drawFace(ctx,sz,t){
+  const cx=sz/2,cy=sz/2,r=sz/2-2;
+  ctx.clearRect(0,0,sz,sz);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle='#0a0520'; ctx.fill();
+
+  // visor glow
+  const glowColor=faceState==='thinking'?`rgba(239,159,39,${.06+.04*Math.sin(t*4)})`:faceState==='speaking'?`rgba(29,158,117,${.06+.04*Math.sin(t*10)})`:`rgba(127,119,221,${.04+.02*Math.sin(t*1.5)})`;
+  ctx.beginPath(); ctx.arc(cx,cy,r*.85,0,Math.PI*2);
+  ctx.fillStyle=glowColor; ctx.fill();
+
+  const blink=Math.sin(blinkT*1.6)>0.93;
+  const eyeCol=faceState==='thinking'?'#EF9F27':faceState==='speaking'?'#5DCAA5':'#7F77DD';
+  const eyeY=cy-sz*.1;
+  const eyeOff=sz*.16;
+
+  [-eyeOff,eyeOff].forEach(ox=>{
+    const ex=cx+ox;
+    if(blink){
+      ctx.beginPath(); ctx.moveTo(ex-sz*.09,eyeY); ctx.lineTo(ex+sz*.09,eyeY);
+      ctx.strokeStyle=eyeCol; ctx.lineWidth=sz*.04; ctx.lineCap='round'; ctx.stroke();
+    } else {
+      const ew=sz*.09,eh=sz*.075;
+      ctx.beginPath(); ctx.ellipse(ex,eyeY,ew,eh,0,0,Math.PI*2);
+      ctx.fillStyle=eyeCol; ctx.fill();
+      ctx.beginPath(); ctx.arc(ex+ew*.3,eyeY-eh*.3,ew*.22,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fill();
+      if(faceState==='thinking'){
+        ctx.beginPath(); ctx.arc(ex,eyeY,ew*1.6,t*2,t*2+Math.PI*.5);
+        ctx.strokeStyle='rgba(239,159,39,.35)'; ctx.lineWidth=sz*.02; ctx.stroke();
+      }
+    }
+  });
+
+  // mouth
+  const mcy=cy+sz*.18;
+  if(faceState==='speaking'&&mouthOpen>0.05){
+    const mw=sz*.13,mh=mouthOpen*sz*.13;
+    ctx.beginPath(); ctx.ellipse(cx,mcy,mw,Math.max(mh,sz*.01),0,0,Math.PI*2);
+    ctx.fillStyle='rgba(127,119,221,.85)'; ctx.fill();
+    if(mh>sz*.04){
+      ctx.beginPath(); ctx.ellipse(cx,mcy-mh*.1,mw*.6,mh*.45,0,0,Math.PI*2);
+      ctx.fillStyle='rgba(174,169,236,.35)'; ctx.fill();
+    }
+  } else {
+    const sm=faceState==='idle'?.4:faceState==='thinking'?.1:.2;
+    ctx.beginPath();
+    ctx.moveTo(cx-sz*.12,mcy+sm*sz*.03);
+    ctx.quadraticCurveTo(cx,mcy+sm*sz*.09,cx+sz*.12,mcy+sm*sz*.03);
+    ctx.strokeStyle=`rgba(127,119,221,.75)`; ctx.lineWidth=sz*.03; ctx.lineCap='round'; ctx.stroke();
+  }
+
+  // antenna
+  const antH=sz*.22;
+  ctx.beginPath(); ctx.moveTo(cx,cy-r+sz*.04); ctx.lineTo(cx,cy-r-antH);
+  ctx.strokeStyle='rgba(127,119,221,.45)'; ctx.lineWidth=sz*.025; ctx.stroke();
+  const ar=(sz*.045)+Math.sin(t*3)*sz*.01;
+  ctx.beginPath(); ctx.arc(cx,cy-r-antH,ar,0,Math.PI*2);
+  ctx.fillStyle=faceState==='thinking'?'#EF9F27':faceState==='speaking'?'#5DCAA5':'#7F77DD';
+  ctx.fill();
+}
+
+function loop(){
+  ft+=.02; blinkT+=.018;
+  drawStars(sctx,stars,W,H);
+  drawStars(nsctx,nstars,W,H);
+  drawFace(fsCtx,44,ft);
+  drawFace(flCtx,100,ft);
+
+  // face glow
+  const gEl=document.getElementById('faceGlow');
+  const gc=faceState==='thinking'?'rgba(239,159,39,':faceState==='speaking'?'rgba(29,158,117,':'rgba(127,119,221,';
+  gEl.style.background=`radial-gradient(circle,${gc}${.15+.08*Math.sin(ft*3)}) 0%,transparent 70%)`;
+
+  requestAnimationFrame(loop);
+}
+
+const REPLIES={
+  '火星上有生命吗？':'哔——这是宇宙最大的谜题之一！科学家在火星上发现了水的痕迹，还有可能适合微生物生存的地下湖泊。但我们还没找到确切的生命证据。你觉得，如果真的有火星生命，它会长什么样子呢？',
+  '黑洞是什么？':'滴滴！黑洞是宇宙中最神秘的天体！它是引力超级强的区域，连光都逃不出去。想象把太阳压缩成直径只有3公里的小球——那就是黑洞！霍金爷爷发现黑洞会慢慢"蒸发"，叫霍金辐射，超厉害！',
+  '宇宙有多大？':'哇——这个问题让我的处理器都发热了！可观测宇宙直径约930亿光年。光速是每秒30万公里，你算算930亿光年是多远？更疯狂的是宇宙还在加速膨胀！我们看到的只是宇宙的一小部分而已。',
+  '光年是什么意思？':'光年不是时间单位，是距离单位！1光年就是光走一年的距离——大约9.46万亿公里！光速是每秒30万公里，连地球到月球只需1.3秒。但是离我们最近的恒星，光也要走4.2年才能到达！'
+};
+
+let inited=false;
+function openNova(){
+  document.getElementById('novaModal').classList.add('open');
+  if(!inited){
+    inited=true;
+    setTimeout(()=>novaSpeak('你好，星际探险家！我是NOVA船长 🚀 宇宙中有无数秘密等着我们！今天想探索什么？'),400);
+  }
+}
+function closeNova(){document.getElementById('novaModal').classList.remove('open');}
+
+function setFaceState(s){
+  faceState=s;
+  const moods={idle:'随时准备回答你的太空问题 ✦',thinking:'正在思考中... 宇宙很大，答案也很深',speaking:'正在为你讲解... 🚀'};
+  const stTexts={idle:'在线',thinking:'思考中',speaking:'回答中'};
+  document.getElementById('moodEl').textContent=moods[s]||moods.idle;
+  document.getElementById('stText').textContent=stTexts[s]||'在线';
+  document.querySelector('.st-dot').style.background=s==='thinking'?'#EF9F27':s==='speaking'?'#5DCAA5':'#1D9E75';
+}
+
+function addMsg(role,html){
+  const msgs=document.getElementById('msgs');
+  const d=document.createElement('div'); d.className=`msg ${role}`;
+  const av=document.createElement('div'); av.className='mav';
+  av.innerHTML=role==='nova'?`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#7F77DD" stroke-width=".8"/><circle cx="7" cy="7" r="3" fill="#7F77DD" opacity=".7"/><circle cx="7" cy="7" r="1.3" fill="#EEEDFE"/></svg>`:'👨‍🚀';
+  const b=document.createElement('div'); b.className='mbubble'; b.innerHTML=html;
+  d.appendChild(av); d.appendChild(b);
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+  return b;
+}
+
+async function novaSpeak(text){
+  busy=true; document.getElementById('sbtn').disabled=true;
+  setFaceState('thinking');
+  const thinkEl=addMsg('nova','<div class="dots"><span></span><span></span><span></span></div>');
+  await delay(700+Math.random()*600);
+  thinkEl.parentElement.remove();
+  setFaceState('speaking');
+  const b=addMsg('nova',''); let i=0;
+  await new Promise(res=>{
+    const iv=setInterval(()=>{
+      mouthOpen=Math.abs(Math.sin(i*.5));
+      b.innerHTML=text.slice(0,i)+'<span class="cursor"></span>'; i++;
+      if(i>text.length){clearInterval(iv);b.innerHTML=text;mouthOpen=0;res();}
+    },24);
+  });
+  setFaceState('idle'); busy=false;
+  document.getElementById('sbtn').disabled=false;
+}
+
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function send(){
+  const inp=document.getElementById('cinp');
+  const text=inp.value.trim();
+  if(!text||busy)return;
+  inp.value=''; addMsg('user',text);
+  const reply=REPLIES[text]||`哔——"${text.slice(0,12)}${text.length>12?'...':''}" 这个问题太有趣了！宇宙的奥秘总是让我惊叹不已。你有没有看过关于这个话题的纪录片呢？`;
+  await novaSpeak(reply);
+}
+function qs(t){document.getElementById('cinp').value=t;send();}
+
+setTimeout(()=>{resize();loop();},80);
+window.addEventListener('resize',resize);
+</script>

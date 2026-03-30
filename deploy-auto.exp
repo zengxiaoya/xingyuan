@@ -1,0 +1,150 @@
+#!/usr/bin/expect -f
+
+# 星渊项目自动部署脚本 (使用expect自动输入密码)
+
+set timeout 60
+
+# 服务器配置
+set SERVER_IP "150.158.11.197"
+set SERVER_USER "root"
+set SERVER_DIR "/opt/xing-yuan"
+set SERVER_PASSWORD "f?4b2[B,Jnk!tc"
+
+puts "\n========================================"
+puts "星渊项目部署脚本"
+puts "========================================"
+puts "服务器: $SERVER_IP"
+puts "目录: $SERVER_DIR"
+puts "========================================\n"
+
+# 步骤 1: 测试服务器连接
+puts "步骤 1: 测试服务器连接..."
+spawn ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "echo '服务器连接成功'"
+expect {
+    "password:" {
+        send "$SERVER_PASSWORD\r"
+        expect {
+            "服务器连接成功" {
+                puts "✓ 服务器连接成功\n"
+            }
+            timeout {
+                puts "✗ 连接失败\n"
+                exit 1
+            }
+        }
+    }
+    timeout {
+        puts "✗ 连接超时\n"
+        exit 1
+    }
+}
+
+# 步骤 2: 创建项目目录
+puts "步骤 2: 创建项目目录..."
+spawn ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "mkdir -p $SERVER_DIR"
+expect "password:"
+send "$SERVER_PASSWORD\r"
+expect eof
+puts "✓ 项目目录已创建\n"
+
+# 步骤 3: 上传项目文件
+puts "步骤 3: 上传项目文件到服务器..."
+spawn rsync -avz --progress \
+    -e "ssh -o StrictHostKeyChecking=no" \
+    --exclude 'node_modules' \
+    --exclude '.git' \
+    --exclude 'dist' \
+    --exclude '.env' \
+    --exclude 'ude-design' \
+    --exclude '.DS_Store' \
+    ./ $SERVER_USER@$SERVER_IP:$SERVER_DIR/
+
+expect {
+    "password:" {
+        send "$SERVER_PASSWORD\r"
+    }
+}
+
+# 等待 rsync 完成
+expect {
+    "total size" {
+        puts "\n✓ 项目文件上传完成\n"
+    }
+    timeout {
+        puts "\n✗ 上传超时\n"
+        exit 1
+    }
+}
+
+# 步骤 4: 上传 .env 文件
+if {[file exists "server/.env"]} {
+    puts "步骤 4: 上传环境变量文件..."
+    spawn scp -o StrictHostKeyChecking=no server/.env $SERVER_USER@$SERVER_IP:$SERVER_DIR/server/.env
+    expect "password:"
+    send "$SERVER_PASSWORD\r"
+    expect eof
+    puts "✓ 环境变量文件已上传\n"
+} else {
+    puts "警告: server/.env 文件不存在,请手动配置\n"
+}
+
+# 步骤 5: 在服务器上构建和启动容器
+puts "步骤 5: 在服务器上构建和启动容器..."
+spawn ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP
+expect "password:"
+send "$SERVER_PASSWORD\r"
+
+expect {
+    -re {\$|#} {
+        send "cd $SERVER_DIR\r"
+        expect -re {\$|#}
+
+        # 检查 SELinux 状态
+        send "getenforce\r"
+        expect {
+            -re "Enforcing|Permissive" {
+                send "setenforce 0\r"
+                expect -re {\$|#}
+                puts "✓ SELinux 已临时禁用"
+            }
+        }
+
+        expect -re {\$|#}
+
+        # 构建并启动容器
+        send "docker compose up -d --build\r"
+        expect {
+            -re "Started|Recreated|up-to-date" {
+                expect -re {\$|#}
+                puts "✓ 容器已启动"
+            }
+            timeout {
+                puts "警告: 容器启动可能有问题"
+                expect -re {\$|#}
+            }
+        }
+
+        expect -re {\$|#}
+
+        # 显示容器状态
+        send "docker compose ps\r"
+        expect -re {\$|#}
+
+        # 显示日志
+        send "echo '\n\n--- 容器日志 (按 Ctrl+C 退出) ---'\r"
+        send "docker compose logs -f\r"
+
+        # 保持连接,用户可以手动 Ctrl+C 退出
+        interact
+    }
+    timeout {
+        puts "\n✗ 连接超时\n"
+        exit 1
+    }
+}
+
+puts "\n========================================"
+puts "部署完成!"
+puts "========================================"
+puts "访问地址: http://$SERVER_IP"
+puts "========================================\n"
