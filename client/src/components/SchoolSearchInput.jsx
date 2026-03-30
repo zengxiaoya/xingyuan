@@ -94,7 +94,7 @@ export function SchoolSearchInput({ value, onChange, placeholder = '搜索学校
       <div style={{ position:'relative' }}>
         <input
           type="text"
-          value={value || searchTerm}
+          value={searchTerm}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsOpen(true)}

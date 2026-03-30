@@ -103,6 +103,7 @@ export default function LevelPage() {
     } catch (e) {
       console.error('加载题目失败', e)
       setPhase(PHASES.INTRO)
+      alert('题目加载失败，请检查网络后重试')
     }
   }
 

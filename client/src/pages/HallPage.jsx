@@ -57,7 +57,7 @@ export default function HallPage() {
         }}>
           {SCIENTIST_ORDER.map((id) => {
             const scientist = SCIENTISTS[id]
-            const unlocked = true || unlockedIds.includes(id)
+            const unlocked = unlockedIds.includes(id)
 
             return (
               <div

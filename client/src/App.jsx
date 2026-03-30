@@ -3,6 +3,30 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useUserStore } from './store/userStore.js'
 import NovaDialog from './components/NovaDialog.jsx'
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="page-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>页面出现错误，请刷新重试</p>
+            <button className="btn-primary" onClick={() => window.location.reload()}>刷新页面</button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'))
 const StarMapPage = lazy(() => import('./pages/StarMapPage.jsx'))
 const LevelPage = lazy(() => import('./pages/LevelPage.jsx'))
@@ -49,6 +73,7 @@ function LoadingFallback() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
@@ -103,6 +128,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }

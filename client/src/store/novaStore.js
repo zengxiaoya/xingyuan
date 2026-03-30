@@ -29,17 +29,11 @@ export const useNovaStore = create((set) => ({
     }),
 
   addMessage: (role, content) =>
-    set((state) => ({
-      messages: [
-        ...state.messages,
-        {
-          id: generateId(),
-          role,
-          content,
-          timestamp: Date.now()
-        }
-      ]
-    })),
+    set((state) => {
+      const newMsg = { id: generateId(), role, content, timestamp: Date.now() }
+      const updated = [...state.messages, newMsg]
+      return { messages: updated.length > 100 ? updated.slice(-100) : updated }
+    }),
 
   setThinking: (bool) =>
     set({
