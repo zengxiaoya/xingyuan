@@ -10,6 +10,7 @@ export const SCIENTISTS = {
     achievement: '提出日心说，改变了人类对宇宙的认知',
     fun: '哥白尼直到生命最后一刻才出版了他的理论，因为他担心被教会惩罚',
     emoji: '🔭',
+    image: '/images/scientists/Nicolaus-Copernicus.png',
     levelId: 'solar_lv1',
     color: '#4fc3f7'
   },
@@ -24,6 +25,7 @@ export const SCIENTISTS = {
     achievement: '改进望远镜，发现木星四颗卫星，支持日心说',
     fun: '伽利略因支持哥白尼理论被软禁，但他在软禁期间仍然进行科学研究',
     emoji: '🔬',
+    image: '/images/scientists/Galileo-Galilei.png',
     levelId: 'solar_lv1',
     color: '#4fc3f7'
   },
@@ -38,6 +40,7 @@ export const SCIENTISTS = {
     achievement: '旅行者号金唱片设计者，科普宇宙系列影响了一代人',
     fun: '萨根设计了旅行者号携带的金唱片，里面录制了地球上55种语言的问候',
     emoji: '🌌',
+    image: '/images/scientists/Carl-Sagan.png',
     levelId: 'solar_lv2',
     color: '#ab82ff'
   },
@@ -52,6 +55,7 @@ export const SCIENTISTS = {
     achievement: '现代火箭之父，设计了将人类送上月球的土星五号火箭',
     fun: '冯·布劳恩小时候把自己的儿童车装上烟火火箭，在街上乱飞，被警察抓住了',
     emoji: '🚀',
+    image: '/images/scientists/Wernher-von-Braun.png',
     levelId: 'solar_lv2',
     color: '#ab82ff'
   },
@@ -66,6 +70,7 @@ export const SCIENTISTS = {
     achievement: '提出德雷克方程，估算宇宙中可能存在的文明数量',
     fun: '德雷克发起了人类第一次有意搜寻外星文明的项目SETI',
     emoji: '📡',
+    image: '/images/scientists/Frank-Drake.png',
     levelId: 'solar_lv3',
     color: '#ff7043'
   },
@@ -80,6 +85,7 @@ export const SCIENTISTS = {
     achievement: '人类第一个进入太空的宇航员，1961年绕地球一周',
     fun: '加加林飞行时间只有108分钟，但他成为了永远的英雄',
     emoji: '👨‍🚀',
+    image: '/images/scientists/Yuri-Gagarin.png',
     levelId: 'explore_lv1',
     color: '#66bb6a'
   },
@@ -94,6 +100,7 @@ export const SCIENTISTS = {
     achievement: '第一个踏上月球表面的人类，1969年阿波罗11号任务',
     fun: '阿姆斯特朗踩在月球上的脚印因为没有风，可能还在那里',
     emoji: '🌙',
+    image: '/images/scientists/Neil-Armstrong.png',
     levelId: 'explore_lv1',
     color: '#66bb6a'
   },
@@ -108,6 +115,7 @@ export const SCIENTISTS = {
     achievement: '中国首位在太空授课的宇航员，执行了多次太空任务',
     fun: '王亚平在太空中做了一个水球实验，展示了太空中水的神奇行为',
     emoji: '👩‍🚀',
+    image: '/images/scientists/Wang-Yaping.png',
     levelId: 'explore_lv2',
     color: '#29b6f6'
   },
@@ -122,6 +130,7 @@ export const SCIENTISTS = {
     achievement: 'SpaceX创始人，开发可重复使用火箭，推进火星移民计划',
     fun: '马斯克把自己的特斯拉跑车发射到了太空，现在还在绕太阳运行',
     emoji: '⚡',
+    image: '/images/scientists/Elon-Musk.png',
     levelId: 'explore_lv3',
     color: '#ec407a'
   },
@@ -136,6 +145,7 @@ export const SCIENTISTS = {
     achievement: '发现宇宙正在膨胀，证明银河系外存在其他星系',
     fun: '哈勃太空望远镜就是以他命名的，帮助人类看到了宇宙最深处',
     emoji: '🌠',
+    image: '/images/scientists/Edwin-Hubble.png',
     levelId: 'universe_lv1',
     color: '#ffa726'
   },
@@ -150,6 +160,7 @@ export const SCIENTISTS = {
     achievement: '提出霍金辐射理论，对黑洞研究做出重大贡献',
     fun: '霍金21岁确诊渐冻症，医生预测他只能活2年，但他活到了76岁',
     emoji: '🌑',
+    image: '/images/scientists/Stephen-Hawking.png',
     levelId: 'universe_lv2',
     color: '#7e57c2'
   },
@@ -164,6 +175,7 @@ export const SCIENTISTS = {
     achievement: '开发算法，帮助拍摄了人类历史上第一张黑洞照片',
     fun: 'Bouman拍摄黑洞照片时只有29岁，她的算法把全球8个射电望远镜连接成了一个地球大小的望远镜',
     emoji: '📸',
+    image: '/images/scientists/Katie-Bouman.png',
     levelId: 'universe_lv2',
     color: '#7e57c2'
   },
@@ -178,6 +190,7 @@ export const SCIENTISTS = {
     achievement: '提出宇宙大爆炸理论，是现代宇宙学的奠基人之一',
     fun: '勒梅特既是天主教神父，也是物理学家，他认为科学和宗教并不矛盾',
     emoji: '💥',
+    image: '/images/scientists/lemaitre.png',
     levelId: 'universe_lv3',
     color: '#ef5350'
   }

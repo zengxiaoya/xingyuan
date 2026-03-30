@@ -1,8 +1,29 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProgressStore } from '../store/progressStore.js'
 import { SCIENTISTS, SCIENTIST_ORDER } from '../data/scientists.js'
 import Icon from '../components/Icon.jsx'
+
+function ScientistAvatar({ scientist }) {
+  const [imgError, setImgError] = useState(false)
+  if (scientist.image && !imgError) {
+    return (
+      <img
+        src={scientist.image}
+        alt={scientist.name}
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: `2px solid ${scientist.color}66`
+        }}
+        onError={() => setImgError(true)}
+      />
+    )
+  }
+  return <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>{scientist.emoji}</span>
+}
 
 export default function HallPage() {
   const navigate = useNavigate()
@@ -42,16 +63,26 @@ export default function HallPage() {
               <div
                 key={id}
                 className="card"
+                onClick={() => unlocked && navigate(`/scientist/${id}`)}
                 style={{
                   opacity: unlocked ? 1 : 0.4,
                   filter: unlocked ? 'none' : 'grayscale(1)',
                   border: unlocked ? `1px solid ${scientist.color}44` : '1px solid var(--card-border)',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  cursor: unlocked ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s',
+                  ...(unlocked ? {
+                    ':hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: `0 8px 24px ${scientist.color}33`,
+                      borderColor: `${scientist.color}88`
+                    }
+                  } : {})
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
                   {unlocked
-                    ? <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>{scientist.emoji}</span>
+                    ? <ScientistAvatar scientist={scientist} />
                     : <Icon name="question" size={40} color="var(--text-muted)" />
                   }
                 </div>

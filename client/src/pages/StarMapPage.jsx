@@ -6,6 +6,7 @@ import { useNovaStore } from '../store/novaStore.js'
 import { LEVELS } from '../data/levels.js'
 import { AvatarDisplay } from '../components/Avatars.jsx'
 import Icon from '../components/Icon.jsx'
+import SpaceCanvas from '../components/SpaceCanvas.jsx'
 
 /* ── Node definitions ── */
 const NODES = [
@@ -40,57 +41,43 @@ export default function StarMapPage() {
   const user       = useUserStore(s => s.user)
   const { stars, isLevelUnlocked, isLevelCompleted } = useProgressStore()
   const openNova   = useNovaStore(s => s.openNova)
-  const canvasRef  = useRef()
-  const mapRef     = useRef()
+  const canvasRef   = useRef()
+  const mapRef      = useRef()
+  const planetImgs  = useRef({})
   const [tooltip, setTooltip] = useState(null)
 
   const completedCount = NODES.filter(n => isLevelCompleted(n.id)).length
 
+  // Preload planet images
+  useEffect(() => {
+    NODES.forEach(n => {
+      const lvl = LEVELS[n.id]
+      if (lvl?.planetImage && !planetImgs.current[n.id]) {
+        const img = new Image()
+        img.src = lvl.planetImage
+        planetImgs.current[n.id] = img
+      }
+    })
+  }, [])
+
   useEffect(() => {
     const canvas = canvasRef.current
     const area   = mapRef.current
+    const ctx = canvas.getContext('2d')
     let W, H
-    let bgStars = []
-    let dustParticles = []
-    let shootingStars = []
     let t = 0
     let flowOff = 0
     let raf
 
     function resize() {
-      W = canvas.width  = area.offsetWidth
-      H = canvas.height = area.offsetHeight
-
-      // Background stars — varied sizes and brightness
-      bgStars = Array.from({ length: 320 }, () => ({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 1.6 + .3,
-        a: Math.random() * .8 + .1,
-        da: (Math.random() - .5) * .007,
-        vx: (Math.random() - .5) * .04, vy: (Math.random() - .5) * .04,
-        bright: Math.random() > .92, // 8% are bright sparkle stars
-      }))
-
-      // Cosmic dust
-      dustParticles = Array.from({ length: 80 }, () => ({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * .7 + .1,
-        a: Math.random() * .3,
-        vx: (Math.random() - .5) * .02, vy: (Math.random() - .5) * .02,
-      }))
-    }
-
-    function spawnShootingStar() {
-      if (shootingStars.length >= 2) return
-      const startX = Math.random() * W * .6 + W * .1
-      const startY = Math.random() * H * .3
-      shootingStars.push({
-        x: startX, y: startY,
-        vx: Math.random() * 6 + 4,
-        vy: Math.random() * 3 + 1.5,
-        life: 1, decay: .025,
-        length: Math.random() * 80 + 60,
-      })
+      const dpr = window.devicePixelRatio || 1
+      W = area.offsetWidth
+      H = area.offsetHeight
+      canvas.width  = W * dpr
+      canvas.height = H * dpr
+      canvas.style.width  = W + 'px'
+      canvas.style.height = H + 'px'
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
 
     function getPos(n) {
@@ -106,97 +93,24 @@ export default function StarMapPage() {
       return 'locked'
     }
 
-    const ctx = canvas.getContext('2d')
-
     function draw() {
       t += 0.016
       flowOff = (flowOff + 1) % 200
       ctx.clearRect(0, 0, W, H)
 
-      // ── Background
-      ctx.fillStyle = '#03010e'
-      ctx.fillRect(0, 0, W, H)
-
       // ── Zone tints (subtle colored backgrounds)
       const zones = [
-        { xr: .35, c0: 'rgba(79,195,247,.025)', c1: 'rgba(79,195,247,0)' },   // solar
-        { xr: .67, c0: 'rgba(102,187,106,.02)',  c1: 'rgba(102,187,106,0)' },  // explore
-        { xr: 1.0, c0: 'rgba(255,167,38,.018)',  c1: 'rgba(255,167,38,0)' },   // universe
+        { xr: .35, c0: 'rgba(79,195,247,.04)',  c1: 'rgba(79,195,247,0)' },
+        { xr: .67, c0: 'rgba(102,187,106,.03)', c1: 'rgba(102,187,106,0)' },
+        { xr: 1.0, c0: 'rgba(255,167,38,.025)', c1: 'rgba(255,167,38,0)' },
       ]
       const zoneWidths = [.35, .32, .33]
       const zoneStarts = [0, .35, .67]
       zones.forEach((z, i) => {
         const g = ctx.createLinearGradient(zoneStarts[i]*W, 0, (zoneStarts[i]+zoneWidths[i])*W, 0)
-        g.addColorStop(0, z.c1)
-        g.addColorStop(.5, z.c0)
-        g.addColorStop(1, z.c1)
+        g.addColorStop(0, z.c1); g.addColorStop(.5, z.c0); g.addColorStop(1, z.c1)
         ctx.fillStyle = g
         ctx.fillRect(zoneStarts[i]*W, 0, zoneWidths[i]*W, H)
-      })
-
-      // ── Nebulas (5 layers, richer colors)
-      const nebulas = [
-        [.15, .30, 'rgba(79,195,247,.07)',  W*.30],
-        [.70, .50, 'rgba(102,187,106,.055)', W*.28],
-        [.48, .72, 'rgba(127,119,221,.065)', W*.26],
-        [.85, .28, 'rgba(255,167,38,.05)',   W*.22],
-        [.32, .62, 'rgba(236,64,122,.04)',   W*.20],
-      ]
-      nebulas.forEach(([nx, ny, c, r]) => {
-        const g = ctx.createRadialGradient(nx*W, ny*H, 0, nx*W, ny*H, r)
-        g.addColorStop(0, c); g.addColorStop(1, 'transparent')
-        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
-      })
-
-      // ── Cosmic dust
-      dustParticles.forEach(d => {
-        d.x += d.vx; d.y += d.vy
-        if (d.x < 0) d.x = W; if (d.x > W) d.x = 0
-        if (d.y < 0) d.y = H; if (d.y > H) d.y = 0
-        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2)
-        ctx.fillStyle = `rgba(180,175,255,${d.a})`; ctx.fill()
-      })
-
-      // ── Background stars
-      bgStars.forEach(s => {
-        s.a += s.da
-        if (s.a < .08) s.da = Math.abs(s.da)
-        if (s.a > .9) s.da = -Math.abs(s.da)
-        s.x += s.vx; s.y += s.vy
-        if (s.x < 0) s.x = W; if (s.x > W) s.x = 0
-        if (s.y < 0) s.y = H; if (s.y > H) s.y = 0
-
-        if (s.bright) {
-          // 4-point sparkle star
-          const spk = s.r * 3
-          ctx.save()
-          ctx.translate(s.x, s.y)
-          ctx.strokeStyle = `rgba(255,255,240,${s.a * .7})`
-          ctx.lineWidth = .6
-          ctx.beginPath(); ctx.moveTo(-spk, 0); ctx.lineTo(spk, 0); ctx.stroke()
-          ctx.beginPath(); ctx.moveTo(0, -spk); ctx.lineTo(0, spk); ctx.stroke()
-          ctx.beginPath(); ctx.moveTo(-spk*.6, -spk*.6); ctx.lineTo(spk*.6, spk*.6); ctx.stroke()
-          ctx.beginPath(); ctx.moveTo(spk*.6, -spk*.6); ctx.lineTo(-spk*.6, spk*.6); ctx.stroke()
-          ctx.restore()
-        } else {
-          ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-          ctx.fillStyle = `rgba(210,205,255,${s.a * .55})`; ctx.fill()
-        }
-      })
-
-      // ── Shooting stars
-      if (Math.random() < .002) spawnShootingStar()
-      shootingStars = shootingStars.filter(ss => ss.life > 0)
-      shootingStars.forEach(ss => {
-        ss.x += ss.vx; ss.y += ss.vy; ss.life -= ss.decay
-        const grad = ctx.createLinearGradient(ss.x, ss.y, ss.x - ss.vx * ss.length/ss.vx, ss.y - ss.vy * ss.length/ss.vx)
-        grad.addColorStop(0, `rgba(255,255,220,${ss.life * .9})`)
-        grad.addColorStop(1, 'transparent')
-        ctx.beginPath()
-        ctx.moveTo(ss.x, ss.y)
-        ctx.lineTo(ss.x - ss.vx * (ss.length / Math.hypot(ss.vx, ss.vy)),
-                   ss.y - ss.vy * (ss.length / Math.hypot(ss.vx, ss.vy)))
-        ctx.strokeStyle = grad; ctx.lineWidth = 1.2; ctx.stroke()
       })
 
       // ── Zone dividers
@@ -278,7 +192,7 @@ export default function StarMapPage() {
         const isDone   = state === 'done'
         const isActive = state === 'active'
         const thC = THEME[n.theme] || THEME.solar
-        const r = isDone ? 23 : isActive ? 24 : 16
+        const r = isDone ? 23 : isActive ? 24 : 20
 
         // Outer pulse rings
         if (isActive) {
@@ -295,34 +209,41 @@ export default function StarMapPage() {
           ctx.strokeStyle = `rgba(29,158,117,${pulse})`; ctx.lineWidth = 1; ctx.stroke()
         }
 
-        // Planet body with theme gradient
+        // Planet body
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2)
-        const bg = ctx.createRadialGradient(x - r * .35, y - r * .35, 0, x, y, r)
-        if (isDone) {
-          bg.addColorStop(0, '#1e5c3a'); bg.addColorStop(1, '#071a10')
-        } else if (isActive) {
-          const col = thC.dark
-          bg.addColorStop(0, col + 'ee'); bg.addColorStop(1, '#060212')
+        const planetImg = planetImgs.current[n.id]
+        if ((isActive || isDone) && planetImg?.complete && planetImg.naturalWidth > 0) {
+          // Draw planet image clipped to circle
+          ctx.save()
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip()
+          const alpha = isDone ? 0.75 : 1
+          ctx.globalAlpha = alpha
+          ctx.drawImage(planetImg, x - r, y - r, r * 2, r * 2)
+          ctx.globalAlpha = 1
+          ctx.restore()
+          // Dark overlay tint for done state
+          if (isDone) {
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2)
+            ctx.fillStyle = 'rgba(0,20,10,0.35)'; ctx.fill()
+          }
         } else {
-          bg.addColorStop(0, '#141028'); bg.addColorStop(1, '#04020c')
+          const bg = ctx.createRadialGradient(x - r * .35, y - r * .35, 0, x, y, r)
+          if (isDone) {
+            bg.addColorStop(0, '#1e5c3a'); bg.addColorStop(1, '#071a10')
+          } else if (isActive) {
+            bg.addColorStop(0, thC.dark + 'ee'); bg.addColorStop(1, '#060212')
+          } else {
+            bg.addColorStop(0, '#2e2460'); bg.addColorStop(1, '#1a1240')
+          }
+          ctx.fillStyle = bg; ctx.fill()
         }
-        ctx.fillStyle = bg; ctx.fill()
 
         // Planet border
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2)
         ctx.strokeStyle = isDone ? '#1D9E75'
           : isActive ? thC.base
-          : 'rgba(60,50,100,.5)'
-        ctx.lineWidth = isDone ? 1.5 : isActive ? 2 : .8; ctx.stroke()
-
-        // Planet surface details (for active/done)
-        if (isActive || isDone) {
-          // subtle surface ring/band
-          const bY = y + r * .15
-          ctx.beginPath()
-          ctx.ellipse(x, bY, r * .7, r * .12, 0, 0, Math.PI * 2)
-          ctx.strokeStyle = isDone ? 'rgba(29,158,117,.15)' : thC.glow + '.1)'
-          ctx.lineWidth = .8; ctx.stroke()
-        }
+          : 'rgba(140,125,210,.75)'
+        ctx.lineWidth = isDone ? 1.5 : isActive ? 2 : 1.2; ctx.stroke()
 
         // Orbit ring (active planets only)
         if (isActive) {
@@ -357,7 +278,7 @@ export default function StarMapPage() {
           // Lock icon drawn manually
           const lw = r * .55, lh = r * .45
           const lx = x - lw/2, ly = y - lh/2 + r * .05
-          ctx.strokeStyle = 'rgba(100,90,160,.55)'; ctx.lineWidth = 1.1
+          ctx.strokeStyle = 'rgba(180,165,240,.85)'; ctx.lineWidth = 1.4
           ctx.beginPath()
           ctx.roundRect(lx, ly + lh * .38, lw, lh * .62, 2)
           ctx.stroke()
@@ -366,7 +287,7 @@ export default function StarMapPage() {
           ctx.stroke()
           ctx.beginPath()
           ctx.arc(x, ly + lh * .72, 1.8, 0, Math.PI * 2)
-          ctx.fillStyle = 'rgba(100,90,160,.5)'; ctx.fill()
+          ctx.fillStyle = 'rgba(180,165,240,.8)'; ctx.fill()
         }
 
         // Label
@@ -374,14 +295,14 @@ export default function StarMapPage() {
         const labelText = lv ? lv.title : n.label
         ctx.fillStyle = isDone  ? 'rgba(29,158,117,.85)'
           : isActive ? thC.base + 'cc'
-          : 'rgba(100,90,160,.45)'
+          : 'rgba(180,165,240,.8)'
         ctx.font = `${isActive ? '600' : '400'} 10.5px system-ui`; ctx.textAlign = 'center'
         ctx.fillText(labelText, x, y + r + 15)
 
         // Lv badge
         ctx.fillStyle = isDone  ? 'rgba(29,158,117,.6)'
           : isActive ? thC.glow + '.65)'
-          : 'rgba(60,50,100,.5)'
+          : 'rgba(150,135,220,.7)'
         ctx.font = '8px Orbitron,system-ui'
         ctx.fillText('Lv' + n.lv, x, y - r - 5)
       })
@@ -452,6 +373,9 @@ export default function StarMapPage() {
       fontFamily: 'system-ui,sans-serif',
     }}>
 
+      {/* ── Space background ── */}
+      <SpaceCanvas style={{ pointerEvents: 'none' }} />
+
       {/* ── Header ── */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -496,6 +420,7 @@ export default function StarMapPage() {
               border: '1.5px solid rgba(127,119,221,.6)',
               overflow: 'hidden', flexShrink: 0,
               boxShadow: '0 0 12px rgba(127,119,221,.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <AvatarDisplay id={user?.avatar} size={34} />
             </div>
@@ -508,19 +433,6 @@ export default function StarMapPage() {
           {/* Nav buttons */}
           <button onClick={() => navigate('/hall')} style={NavBtn}>名人堂</button>
           <button onClick={() => navigate('/achievement')} style={NavBtn}>成就</button>
-          <button onClick={() => openNova({ type: 'general' })} style={{
-            ...NavBtn,
-            border: '1px solid rgba(127,119,221,.5)',
-            color: '#AFA9EC',
-            display: 'flex', alignItems: 'center', gap: '4px',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#7F77DD" strokeWidth="1"/>
-              <circle cx="12" cy="12" r="4.5" fill="#7F77DD" opacity=".7"/>
-              <circle cx="12" cy="12" r="2" fill="#EEEDFE"/>
-            </svg>
-            NOVA
-          </button>
         </div>
       </header>
 
@@ -549,7 +461,7 @@ export default function StarMapPage() {
 
       {/* ── Canvas area ── */}
       <div ref={mapRef} style={{ flex: 1, position: 'relative', minHeight: '0' }}>
-        <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }}/>
+        <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%', position: 'relative', zIndex: 1 }}/>
 
         {/* Tooltip */}
         {tooltip && (

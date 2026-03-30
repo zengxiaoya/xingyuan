@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../store/userStore.js'
 import { AVATAR_LIST, AvatarDisplay } from '../components/Avatars.jsx'
+import { SchoolSearchInput } from '../components/SchoolSearchInput.jsx'
+import SpaceCanvas from '../components/SpaceCanvas.jsx'
 
 /* ─────────────────────────────────────────────
    数据
@@ -125,18 +127,8 @@ function Highlighted({ text, highlights }) {
   return <>{parts}</>
 }
 
-/* ═══════════════════════════════════════════════════════
-   SpaceCanvas — 沉浸式宇宙交互画布
-   · 星空 (3层深度)
-   · 星云光晕
-   · 土星 + 轨道环 + 卫星
-   · 小行星
-   · 宇宙飞船（推进火焰动画）
-   · 太阳能卫星
-   · 鼠标悬停：物体轻微漂移 / 星星增亮
-   · 点击：随机惊喜特效（彗星/粒子爆炸/飞船跃迁/光波）
-═══════════════════════════════════════════════════════ */
-function SpaceCanvas({ warpMode = false, onWarpDone }) {
+/* SpaceCanvas extracted to components/SpaceCanvas.jsx */
+function _SpaceCanvas_UNUSED({ warpMode = false, onWarpDone }) {
   const canvasRef = useRef()
   const mouseRef  = useRef({ x: -9999, y: -9999 })
   const stateRef  = useRef({})
@@ -1036,8 +1028,11 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <label style={LS}>学校</label>
-                    <input type="text" placeholder="输入你的学校名称" value={form.school} maxLength={30}
-                      onChange={e=>setForm(p=>({...p,school:e.target.value}))} style={IS(false)}/>
+                    <SchoolSearchInput
+                      value={form.school}
+                      onChange={school=>setForm(p=>({...p,school}))}
+                      placeholder="搜索学校名称（如：实验小学）"
+                    />
                   </div>
                   <div>
                     <label style={LS}>选择你的头像</label>

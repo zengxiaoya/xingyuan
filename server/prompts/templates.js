@@ -110,6 +110,22 @@ export function getQuizPrompt(levelId, type) {
 }`;
   }
 
+  if (type === 'multi') {
+    return `${baseInstruction}
+
+请生成一道四选多选择题（正确答案为2到3个），严格按以下 JSON 格式返回，不要有多余文字：
+{
+  "type": "multi",
+  "question": "题目文本（不超过50字，注明"以下哪些..."或"下列哪些..."）",
+  "options": ["A. 选项1", "B. 选项2", "C. 选项3", "D. 选项4"],
+  "correctIndices": [0, 2],
+  "explanation": "答案解释（60字以内，说明为何这些选项正确）",
+  "scientistHint": "相关科学家或探测器的一句有趣提示（30字以内）"
+}
+
+注意：correctIndices 是所有正确选项的索引数组（0-3），必须包含 2 到 3 个正确答案，不能全选也不能只选1个。`
+  }
+
   return baseInstruction;
 }
 

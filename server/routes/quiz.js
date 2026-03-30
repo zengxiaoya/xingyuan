@@ -41,6 +41,14 @@ const FALLBACK_QUESTIONS = {
       question: '如果你能乘坐宇宙飞船去太阳系中的任何一颗行星旅游，你会去哪里？为什么？',
       prompt: '想想那颗行星有什么特别的地方，比如它的大小、颜色、或者特殊的环境',
     },
+    multi: {
+      type: 'multi',
+      question: '以下哪些是太阳系中的气态巨行星？',
+      options: ['A. 木星', 'B. 地球', 'C. 土星', 'D. 火星'],
+      correctIndices: [0, 2],
+      explanation: '木星和土星都是气态巨行星，主要由氢和氦组成，体积巨大。地球和火星是岩石行星。',
+      scientistHint: '伽利略用望远镜首先观察到木星的四颗卫星。',
+    },
   },
 
   solar_lv2: {
@@ -62,6 +70,14 @@ const FALLBACK_QUESTIONS = {
       type: 'creative',
       question: '如果你是探测器设计师，你想设计一个去哪里探索的探测器？它有什么特别的功能？',
       prompt: '可以想想太阳系里最神秘或最有趣的地方',
+    },
+    multi: {
+      type: 'multi',
+      question: '以下哪些是人类已发射的太空探测器？',
+      options: ['A. 旅行者1号', 'B. 探测者9号', 'C. 好奇号', 'D. 新视野号'],
+      correctIndices: [0, 2, 3],
+      explanation: '旅行者1号、好奇号、新视野号都是真实存在的探测器，"探测者9号"是虚构的。',
+      scientistHint: '旅行者1号已成为飞离太阳系最远的人造物体。',
     },
   },
 
@@ -85,6 +101,14 @@ const FALLBACK_QUESTIONS = {
       question: '如果木卫二的地下海洋里真的有生命，你觉得那里的生物会是什么样子的？',
       prompt: '想想没有阳光、压力很大的深海里，生命可能会长什么样',
     },
+    multi: {
+      type: 'multi',
+      question: '太阳系中哪些天体被认为可能存在液态水？',
+      options: ['A. 木卫二（欧罗巴）', 'B. 水星', 'C. 土卫二（恩克拉多斯）', 'D. 土卫六（泰坦）'],
+      correctIndices: [0, 2, 3],
+      explanation: '木卫二冰层下有地下海洋，土卫二有水蒸气喷泉，土卫六有液态甲烷湖（不是水但也是液体）。水星温度极端，不适合液态水存在。',
+      scientistHint: '德雷克方程帮助科学家估算宇宙中文明的数量。',
+    },
   },
 
   explore_lv1: {
@@ -106,6 +130,14 @@ const FALLBACK_QUESTIONS = {
       type: 'creative',
       question: '如果你要成为宇航员，你觉得最需要准备什么？你会怎么训练自己？',
       prompt: '想想在太空里会遇到哪些挑战，比如失重、辐射、与家人分离……',
+    },
+    multi: {
+      type: 'multi',
+      question: '以下哪些是成为宇航员必须经历的训练？',
+      options: ['A. 水下太空行走模拟', 'B. 马拉松比赛', 'C. 离心机高过载训练', 'D. 极端温度测试'],
+      correctIndices: [0, 2, 3],
+      explanation: '宇航员训练包括水下失重模拟、离心机8G过载、极端温度测试。马拉松不是标准训练科目。',
+      scientistHint: '加加林是第一位进入太空的人类，他的训练非常严苛。',
     },
   },
 
@@ -129,6 +161,14 @@ const FALLBACK_QUESTIONS = {
       question: '如果你在太空空间站住一个月，你最想带什么东西去？为什么？',
       prompt: '想想在太空里什么东西用不了，什么东西会很想念',
     },
+    multi: {
+      type: 'multi',
+      question: '在太空失重环境中，以下哪些事情会发生？',
+      options: ['A. 水会变成球形漂浮', 'B. 眼泪会正常流下', 'C. 睡觉需要固定自己', 'D. 肌肉会逐渐萎缩'],
+      correctIndices: [0, 2, 3],
+      explanation: '失重环境下水会凝成球形，眼泪不会流下而是粘在脸上，睡觉必须固定，长期失重导致肌肉萎缩。',
+      scientistHint: '王亚平在天宫空间站开展了水球实验来演示失重现象。',
+    },
   },
 
   explore_lv3: {
@@ -150,6 +190,14 @@ const FALLBACK_QUESTIONS = {
       type: 'creative',
       question: '如果人类在火星上建了一个城市，你觉得那里的学校会是什么样子的？',
       prompt: '想想火星上的重力比地球小、没有蓝天白云，这些会怎么影响学校的设计',
+    },
+    multi: {
+      type: 'multi',
+      question: '人类移民火星面临哪些挑战？',
+      options: ['A. 宇宙辐射强烈', 'B. 火星太靠近太阳', 'C. 大气无法直接呼吸', 'D. 旅途约需7个月'],
+      correctIndices: [0, 2, 3],
+      explanation: '移民火星面临强宇宙辐射、二氧化碳大气无法呼吸、7个月旅程的挑战。火星实际上比地球离太阳更远。',
+      scientistHint: 'SpaceX的星舰飞船设计目标就是把人类送往火星。',
     },
   },
 
@@ -173,6 +221,14 @@ const FALLBACK_QUESTIONS = {
       question: '宇宙如此巨大，你觉得在遥远的星系里，会有和我们人类一样的生命吗？',
       prompt: '想想宇宙里有那么多星星，每颗星星可能都有行星……',
     },
+    multi: {
+      type: 'multi',
+      question: '以下哪些关于光年的说法是正确的？',
+      options: ['A. 光年是距离单位', 'B. 一光年约9.46万亿公里', 'C. 光年是时间单位', 'D. 比邻星距我们约4.2光年'],
+      correctIndices: [0, 1, 3],
+      explanation: '光年是距离单位（不是时间），约等于9.46万亿公里，比邻星距我们约4.2光年。',
+      scientistHint: '哈勃望远镜帮助我们看到了130多亿光年外的天体。',
+    },
   },
 
   universe_lv2: {
@@ -194,6 +250,14 @@ const FALLBACK_QUESTIONS = {
       type: 'creative',
       question: '如果你能乘坐宇宙飞船在黑洞旁边安全观察，你最想知道黑洞的什么秘密？',
       prompt: '想想黑洞能吸走光、时间在黑洞旁边会变慢……',
+    },
+    multi: {
+      type: 'multi',
+      question: '以下哪些关于黑洞的描述是正确的？',
+      options: ['A. 连光都无法逃脱', 'B. 由大质量恒星死亡形成', 'C. 黑洞不会影响时间', 'D. 周围有事件视界'],
+      correctIndices: [0, 1, 3],
+      explanation: '黑洞引力极强连光都逃不掉，由大质量恒星坍缩形成，周围有事件视界。时间在黑洞附近会变慢，不是不受影响。',
+      scientistHint: '霍金提出黑洞会发出微弱辐射，即"霍金辐射"。',
     },
   },
 
@@ -217,6 +281,14 @@ const FALLBACK_QUESTIONS = {
       question: '如果时间机器能带你回到宇宙大爆炸后的第一秒，你觉得你会看到什么？',
       prompt: '想想宇宙最初只是一个超级热的小点，然后迅速膨胀……',
     },
+    multi: {
+      type: 'multi',
+      question: '以下哪些是大爆炸理论的有力证据？',
+      options: ['A. 宇宙微波背景辐射', 'B. 宇宙正在膨胀', 'C. 太阳每天升起落下', 'D. 星系在彼此远离'],
+      correctIndices: [0, 1, 3],
+      explanation: '宇宙微波背景辐射是大爆炸余晖，宇宙膨胀和星系相互远离都支持大爆炸理论。太阳升落是地球自转现象，与大爆炸无关。',
+      scientistHint: '勒梅特神父最早提出宇宙起源于一个"原始原子"的爆炸。',
+    },
   },
 };
 
@@ -230,7 +302,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: '缺少参数：levelId 和 type 为必填项' });
   }
 
-  const validTypes = ['choice', 'guess', 'creative'];
+  const validTypes = ['choice', 'guess', 'creative', 'multi'];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ error: `type 参数无效，必须是 ${validTypes.join('/')} 之一` });
   }

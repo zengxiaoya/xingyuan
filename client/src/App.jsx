@@ -7,6 +7,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage.jsx'))
 const StarMapPage = lazy(() => import('./pages/StarMapPage.jsx'))
 const LevelPage = lazy(() => import('./pages/LevelPage.jsx'))
 const HallPage = lazy(() => import('./pages/HallPage.jsx'))
+const ScientistDetailPage = lazy(() => import('./pages/ScientistDetailPage.jsx'))
 const AchievementPage = lazy(() => import('./pages/AchievementPage.jsx'))
 const CertificatePage = lazy(() => import('./pages/CertificatePage.jsx'))
 
@@ -72,6 +73,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <HallPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scientist/:id"
+            element={
+              <ProtectedRoute>
+                <ScientistDetailPage />
               </ProtectedRoute>
             }
           />
