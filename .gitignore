@@ -1,2 +1,4 @@
 .claude/rules/sdd/
 node_modules
+server/data/*.db
+server/.env
