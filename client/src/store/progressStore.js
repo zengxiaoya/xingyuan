@@ -2,24 +2,21 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 const LV1_LEVELS = ['solar_lv1', 'explore_lv1', 'universe_lv1']
-const LV2_LEVELS = ['solar_lv2', 'explore_lv2', 'universe_lv2']
-const LV3_LEVELS = ['solar_lv3', 'explore_lv3', 'universe_lv3']
+
+// 同主题链式解锁：完成本主题上一级即可解锁下一级
+const PREREQ = {
+  solar_lv2: 'solar_lv1',
+  explore_lv2: 'explore_lv1',
+  universe_lv2: 'universe_lv1',
+  solar_lv3: 'solar_lv2',
+  explore_lv3: 'explore_lv2',
+  universe_lv3: 'universe_lv2',
+}
 
 function isLevelUnlocked(levelId, badges) {
-  // Lv1 全部默认解锁
   if (LV1_LEVELS.includes(levelId)) return true
-
-  // Lv2：三个 Lv1 全部通关后解锁
-  if (LV2_LEVELS.includes(levelId)) {
-    return LV1_LEVELS.every((id) => badges.includes(id))
-  }
-
-  // Lv3：三个 Lv2 全部通关后解锁
-  if (LV3_LEVELS.includes(levelId)) {
-    return LV2_LEVELS.every((id) => badges.includes(id))
-  }
-
-  return false
+  const prereq = PREREQ[levelId]
+  return prereq ? badges.includes(prereq) : false
 }
 
 export const useProgressStore = create(
@@ -29,6 +26,7 @@ export const useProgressStore = create(
       scientists: [],
       stars: 0,
       creativeAnswers: {},
+      novaEvaluation: '',
 
       addBadge: (levelId) =>
         set((state) => ({
@@ -59,6 +57,8 @@ export const useProgressStore = create(
             [levelId]: answer
           }
         })),
+
+      setNovaEvaluation: (text) => set({ novaEvaluation: text }),
 
       completeLevel: (levelId, starsEarned, scientistIds) => {
         const state = get()
@@ -95,7 +95,8 @@ export const useProgressStore = create(
           badges: [],
           scientists: [],
           stars: 0,
-          creativeAnswers: {}
+          creativeAnswers: {},
+          novaEvaluation: ''
         })
     }),
     {
@@ -104,7 +105,8 @@ export const useProgressStore = create(
         badges: state.badges,
         scientists: state.scientists,
         stars: state.stars,
-        creativeAnswers: state.creativeAnswers
+        creativeAnswers: state.creativeAnswers,
+        novaEvaluation: state.novaEvaluation
       })
     }
   )

@@ -41,6 +41,7 @@ export default function LevelPage() {
 
   const [phase, setPhase]           = useState(PHASES.INTRO)
   const [learnIndex, setLearnIndex] = useState(0)
+  const [loadError, setLoadError]   = useState(false)
 
   // 单选题 (3道)
   const [choiceQs, setChoiceQs]   = useState([null, null, null])
@@ -102,8 +103,8 @@ export default function LevelPage() {
       setPhase(PHASES.Q1)
     } catch (e) {
       console.error('加载题目失败', e)
+      setLoadError(true)
       setPhase(PHASES.INTRO)
-      alert('题目加载失败，请检查网络后重试')
     }
   }
 
@@ -295,7 +296,10 @@ export default function LevelPage() {
               <button key={idx}
                 onClick={() => phase === currentPh && handleChoiceSelect(qi, idx)}
                 disabled={result === 'correct' || result === 'wrong_final' || phase === fbPh}
-                style={{ padding: '0.8rem 1rem', textAlign: 'left', background: bg, border: `1.5px solid ${border}`, borderRadius: '12px', color, fontSize: '0.9rem', cursor: result === 'correct' || result === 'wrong_final' ? 'default' : 'pointer', transition: 'all 0.2s', lineHeight: 1.5 }}>
+                style={{ padding: '0.8rem 1rem', textAlign: 'left', background: bg, border: `1.5px solid ${border}`, borderRadius: '12px', color, fontSize: '0.9rem', cursor: result === 'correct' || result === 'wrong_final' ? 'default' : 'pointer', transition: 'all 0.2s', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+                <span style={{ flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%', background: selected === idx ? `${level.color}30` : 'rgba(127,119,221,0.1)', border: `1px solid ${selected === idx ? level.color : 'rgba(127,119,221,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700, color: selected === idx ? level.color : 'var(--text-muted)', fontFamily: 'var(--font-english)' }}>
+                  {String.fromCharCode(65 + idx)}
+                </span>
                 {opt}
               </button>
             )
@@ -382,9 +386,21 @@ export default function LevelPage() {
             </div>
           </div>
 
+          {loadError && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              padding: '0.75rem 1rem', marginBottom: '1rem',
+              background: 'rgba(224,85,85,0.1)', border: '1px solid rgba(224,85,85,0.3)',
+              borderRadius: '10px', fontSize: '0.85rem', color: 'var(--danger)'
+            }}>
+              <Icon name="warning" size={15} color="var(--danger)" />
+              题目加载失败，请检查网络后重试
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <button className="btn-primary" style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-              onClick={() => { setLearnIndex(0); setPhase(PHASES.LEARN) }}>
+              onClick={() => { setLoadError(false); setLearnIndex(0); setPhase(PHASES.LEARN) }}>
               <Icon name="rocket" size={15} color="currentColor" />
               开始闯关 ({alreadyDone ? '重玩' : '5 道题'})
             </button>
@@ -608,13 +624,14 @@ export default function LevelPage() {
                       display: 'flex', alignItems: 'center', gap: '0.6rem'
                     }}>
                     <span style={{
-                      width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0,
+                      width: '20px', height: '20px', borderRadius: '4px', flexShrink: 0,
                       border: `1.5px solid ${isSelected ? level.color : 'rgba(127,119,221,0.4)'}`,
-                      background: isSelected ? `${level.color}30` : 'transparent',
+                      background: isSelected ? `${level.color}30` : 'rgba(127,119,221,0.06)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.65rem', color: level.color
+                      fontSize: '0.65rem', fontWeight: 700, fontFamily: 'var(--font-english)',
+                      color: isSelected ? level.color : 'var(--text-muted)'
                     }}>
-                      {isSelected ? '✓' : ''}
+                      {isSelected ? '✓' : String.fromCharCode(65 + idx)}
                     </span>
                     {opt}
                   </button>
@@ -685,11 +702,16 @@ export default function LevelPage() {
                     resize: 'vertical', marginBottom: '0.75rem', lineHeight: 1.7
                   }}
                 />
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <Icon name="sparkle" size={13} color="var(--purple-300)" /> 没有标准答案，大胆发挥你的想象力！
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Icon name="sparkle" size={13} color="var(--purple-300)" /> 没有标准答案，大胆发挥你的想象力！
+                  </p>
+                  <span style={{ fontSize: '0.72rem', color: q5Input.trim().length >= 20 ? 'var(--teal-400)' : 'var(--text-muted)' }}>
+                    {q5Input.trim().length}/20字
+                  </span>
+                </div>
                 <button className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                  onClick={handleQ5Submit} disabled={!q5Input.trim() || q5Evaluating}>
+                  onClick={handleQ5Submit} disabled={q5Input.trim().length < 20 || q5Evaluating}>
                   {q5Evaluating ? 'NOVA 正在阅读...' : <><Icon name="sparkle" size={14} color="currentColor" /> 提交创意</>}
                 </button>
               </>

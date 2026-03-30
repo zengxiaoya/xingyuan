@@ -38,13 +38,14 @@ export async function evaluateAnswer(levelId, question, answer, type) {
  * SSE 流式聊天（Generator 函数，逐段 yield 文本）
  * @param {Array<{role: string, content: string}>} messages - 消息历史
  * @param {{ type: string, id: string|null }} context - 对话上下文
+ * @param {{ name: string, grade: string, school: string }} userInfo - 用户信息
  * @yields {string} 文本片段
  */
-export async function* streamChat(messages, context) {
+export async function* streamChat(messages, context, userInfo) {
   const res = await fetch(`${BASE_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, context })
+    body: JSON.stringify({ messages, context, userInfo })
   })
 
   if (!res.ok) throw new Error('聊天请求失败')
@@ -87,4 +88,20 @@ export async function* streamChat(messages, context) {
       }
     }
   }
+}
+
+/**
+ * 生成 NOVA 结业评语
+ * @param {{ name: string, grade: string, school: string }} userInfo
+ * @param {{ stars: number, badgeCount: number, scientistCount: number }} progress
+ * @returns {Promise<{ evaluation: string }>}
+ */
+export async function generateCertificateEvaluation(userInfo, progress) {
+  const res = await fetch(`${BASE_URL}/certificate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...userInfo, ...progress })
+  })
+  if (!res.ok) throw new Error('生成评语失败')
+  return res.json()
 }

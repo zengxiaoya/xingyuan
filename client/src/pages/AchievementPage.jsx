@@ -109,15 +109,17 @@ export default function AchievementPage() {
           </div>
         </div>
 
-        {completedLevels === totalLevels && (
-          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <button className="btn-primary" onClick={() => navigate('/certificate')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Icon name="graduation" size={16} color="currentColor" />
-              领取结业证书
-            </button>
-          </div>
-        )}
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <button className="btn-primary" onClick={() => navigate('/certificate')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              background: completedLevels === totalLevels ? undefined : 'rgba(127,119,221,0.15)',
+              borderColor: completedLevels === totalLevels ? undefined : 'rgba(127,119,221,0.4)',
+              color: completedLevels === totalLevels ? undefined : 'var(--purple-300)'
+            }}>
+            <Icon name="graduation" size={16} color="currentColor" />
+            {completedLevels === totalLevels ? '领取结业证书 🎓' : '查看我的证书'}
+          </button>
+        </div>
       </div>
     </div>
   )

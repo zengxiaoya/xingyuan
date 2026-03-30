@@ -20,7 +20,7 @@ const MODEL = () => process.env.KIMI_MODEL || 'kimi-k2';
 // ─── 路由处理 ─────────────────────────────────────────────────────────────────
 
 router.post('/', async (req, res) => {
-  const { messages, context } = req.body;
+  const { messages, context, userInfo } = req.body;
 
   // 参数校验
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
 
   try {
     const client = getKimiClient();
-    const systemPrompt = getNovaSystemPrompt(context || {});
+    const systemPrompt = getNovaSystemPrompt(context || {}, userInfo || {});
 
     // 构造消息列表，插入系统提示
     const fullMessages = [

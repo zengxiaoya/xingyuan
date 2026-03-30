@@ -30,9 +30,11 @@ const LEVEL_NAMES = {
 /**
  * 生成 NOVA 角色系统提示词
  * @param {{ type: 'level'|'scientist'|'general', id: string }} context
+ * @param {{ name: string, grade: string, school: string }} userInfo
  */
-export function getNovaSystemPrompt(context) {
+export function getNovaSystemPrompt(context, userInfo) {
   const { type, id } = context || {};
+  const { name, grade, school } = userInfo || {};
 
   let contextDesc = '';
   if (type === 'level' && id && LEVEL_NAMES[id]) {
@@ -43,9 +45,14 @@ export function getNovaSystemPrompt(context) {
     contextDesc = '当前小朋友正在自由探索星渊宇宙馆。';
   }
 
+  let userDesc = '';
+  if (name) {
+    userDesc = `\n你认识这位小朋友：他/她的名字是「${name}」${grade ? `，${grade}` : ''}${school ? `，就读于${school}` : ''}。在对话中要自然地叫出他/她的名字，让他/她感受到你们是老朋友关系。`;
+  }
+
   return `你是 NOVA，一位友善、幽默、充满活力的太空船长机器人，专门陪伴 6-10 岁的小学生探索宇宙奥秘。
 
-${contextDesc}
+${contextDesc}${userDesc}
 
 你的角色规则：
 1. 【语气】始终保持活泼、鼓励、充满好奇心的语气，像一个大朋友而不是老师

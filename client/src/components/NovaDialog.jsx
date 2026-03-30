@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNovaStore } from '../store/novaStore.js'
+import { useUserStore } from '../store/userStore.js'
 import { streamChat } from '../utils/api.js'
 
 export default function NovaDialog() {
@@ -15,6 +16,7 @@ export default function NovaDialog() {
     clearMessages
   } = useNovaStore()
 
+  const user = useUserStore(s => s.user)
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -46,7 +48,7 @@ export default function NovaDialog() {
 
     let accumulated = ''
     try {
-      for await (const chunk of streamChat(history, context)) {
+      for await (const chunk of streamChat(history, context, user)) {
         accumulated += chunk
         useNovaStore.setState((state) => {
           const lastMsg = state.messages[state.messages.length - 1]

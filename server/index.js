@@ -9,6 +9,7 @@ import { rateLimiter } from './middleware/rateLimit.js';
 import chatRouter from './routes/chat.js';
 import quizRouter from './routes/quiz.js';
 import evaluateRouter from './routes/evaluate.js';
+import certificateRouter from './routes/certificate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ app.use(rateLimiter);
 app.use('/api/chat', chatRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/api/evaluate', evaluateRouter);
+app.use('/api/certificate', certificateRouter);
 
 // 健康检查端点
 app.get('/health', (req, res) => {
