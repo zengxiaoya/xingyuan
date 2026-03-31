@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '../store/userStore.js'
+import { useProgressStore } from '../store/progressStore.js'
 import { AVATAR_LIST, AvatarDisplay } from '../components/Avatars.jsx'
 import { SchoolSearchInput } from '../components/SchoolSearchInput.jsx'
 import SpaceCanvas from '../components/SpaceCanvas.jsx'
+import { registerUser, loginUser } from '../utils/api.js'
 
 /* ─────────────────────────────────────────────
    数据
@@ -735,16 +737,46 @@ const BASE = {
   overflow:'hidden',
 }
 
+/* ── PIN 4位输入框 ────────────────────────────────────────────────────────── */
+function PinInput({ value, onChange, hasError }) {
+  const inputRef = useRef()
+  const digits = value.padEnd(4, ' ').split('').slice(0, 4)
+  return (
+    <div style={{ position:'relative', display:'flex', gap:'0.6rem', justifyContent:'center' }}
+      onClick={() => inputRef.current?.focus()}>
+      {[0,1,2,3].map(i => (
+        <div key={i} style={{
+          width:'52px', height:'58px', borderRadius:'12px',
+          background:'rgba(127,119,221,0.08)',
+          border:`1.5px solid ${hasError ? 'var(--danger)' : digits[i].trim() ? 'rgba(127,119,221,0.7)' : 'rgba(127,119,221,0.25)'}`,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:'1.8rem', color:'#EEEDFE', userSelect:'none',
+        }}>
+          {digits[i].trim() ? '●' : ''}
+        </div>
+      ))}
+      <input ref={inputRef} type="password" inputMode="numeric"
+        value={value} maxLength={4}
+        onChange={e => onChange(e.target.value.replace(/\D/g,'').slice(0,4))}
+        style={{ position:'absolute', opacity:0, width:'100%', height:'100%', cursor:'default' }}
+      />
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const setUser  = useUserStore(s => s.setUser)
+  const restoreFromDB = useProgressStore(s => s.restoreFromDB)
 
   const [act, setAct]         = useState(1)
   const [poemLine, setPLine]  = useState(-1)
   const [credVis, setCredVis] = useState([false,false,false,false])
   const [formIn, setFormIn]   = useState(false)
-  const [form, setForm]       = useState({ name:'', grade:'', school:'', avatar:'boy1' })
+  const [mode, setMode]       = useState('register') // 'register' | 'login'
+  const [form, setForm]       = useState({ name:'', grade:'', class_name:'', school:'', avatar:'boy1', pin:'' })
   const [err, setErr]         = useState('')
+  const [loading, setLoading] = useState(false)
   const timers = useRef([])
   const tick = (fn, ms) => { const t=setTimeout(fn,ms); timers.current.push(t) }
 
@@ -770,10 +802,41 @@ export default function LoginPage() {
     timers.current.forEach(clearTimeout); timers.current=[]
     setAct(6); setTimeout(()=>setFormIn(true),60)
   }
-  function handleSubmit(e) {
+  async function handleRegister(e) {
     e.preventDefault()
     if (!form.name.trim()) { setErr('请输入你的名字'); return }
-    setUser(form); navigate('/map')
+    if (form.pin.length !== 4) { setErr('请设置 4 位数字 PIN'); return }
+    setLoading(true); setErr('')
+    try {
+      const { user } = await registerUser(form)
+      setUser(user)
+      navigate('/map')
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault()
+    if (!form.name.trim()) { setErr('请输入你的名字'); return }
+    if (form.pin.length !== 4) { setErr('请输入 4 位数字 PIN'); return }
+    setLoading(true); setErr('')
+    try {
+      const { user, progress } = await loginUser(form)
+      setUser(user)
+      restoreFromDB(progress)
+      navigate('/map')
+    } catch (e) {
+      setErr(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function switchMode(m) {
+    setMode(m); setErr('')
   }
 
   const SkipBtn = act < 6 && (
@@ -979,7 +1042,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* ─ Act 6: 登录表单 ─ */}
+        {/* ─ Act 6: 登录/注册表单 ─ */}
         {act === 6 && (
           <>
             <style>{`
@@ -991,86 +1054,164 @@ export default function LoginPage() {
               }
             `}</style>
             <div style={{
-              width:'100%', maxWidth:'420px', padding:'0 1rem',
+              width:'100%', maxWidth:'440px', padding:'0 1rem',
               opacity: formIn?1:0, pointerEvents:'auto',
               animation: formIn ? 'riseUp 0.85s cubic-bezier(0.175,0.885,0.32,1.275) forwards' : 'none',
+              maxHeight:'90vh', overflowY:'auto',
             }}>
               <div style={{
                 background:'rgba(38,33,92,0.88)', backdropFilter:'blur(16px)',
                 border:'0.5px solid #534AB7', borderRadius:'20px',
-                padding:'clamp(1.5rem,5vw,2rem)',
+                padding:'clamp(1.2rem,4vw,1.8rem)',
               }}>
-                {/* 表单标题 */}
-                <div style={{
-                  fontFamily:'var(--font-english)', fontSize:'1.62rem',
-                  color:'#EEEDFE', letterSpacing:'0.15em', textAlign:'center',
-                  marginBottom:'1.5rem',
-                }}>创建你的星际档案</div>
+                {/* Tab 切换 */}
+                <div style={{ display:'flex', borderRadius:'10px', overflow:'hidden',
+                  border:'1px solid rgba(127,119,221,0.2)', marginBottom:'1.5rem' }}>
+                  {[['register','新的探索者'],['login','找回进度']].map(([m,label])=>(
+                    <button key={m} type="button" onClick={()=>switchMode(m)} style={{
+                      flex:1, padding:'0.6rem', border:'none', cursor:'pointer',
+                      background: mode===m ? 'rgba(127,119,221,0.25)' : 'transparent',
+                      color: mode===m ? '#EEEDFE' : '#6b66b0',
+                      fontSize:'0.85rem', fontWeight: mode===m ? 600 : 400,
+                      transition:'all 0.2s',
+                    }}>{label}</button>
+                  ))}
+                </div>
 
-                <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-                  <div>
-                    <label style={LS}>探索者名字 <span style={{color:'#7F77DD'}}>*</span></label>
-                    <input type="text" placeholder="输入你的名字"
-                      value={form.name} maxLength={20} autoFocus
-                      onChange={e=>{setForm(p=>({...p,name:e.target.value}));setErr('')}}
-                      style={IS(!!err)}/>
-                    {err&&<p style={{color:'var(--danger)',fontSize:'0.78rem',marginTop:'0.3rem'}}>{err}</p>}
-                  </div>
-                  <div>
-                    <label style={LS}>年级</label>
-                    <select value={form.grade} onChange={e=>setForm(p=>({...p,grade:e.target.value}))}
-                      style={{...IS(false), appearance:'none'}}>
-                      <option value="">选择年级</option>
-                      {['一年级','二年级','三年级','四年级','五年级','六年级'].map(g=>(
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={LS}>学校</label>
-                    <SchoolSearchInput
-                      value={form.school}
-                      onChange={school=>setForm(p=>({...p,school}))}
-                      placeholder="搜索学校名称（如：实验小学）"
-                    />
-                  </div>
-                  <div>
-                    <label style={LS}>选择你的头像</label>
-                    <div style={{
-                      display:'grid', gridTemplateColumns:'repeat(3,1fr)',
-                      gap:'0.6rem', marginTop:'0.4rem',
-                    }}>
-                      {AVATAR_LIST.map(av=>(
-                        <button key={av.id} type="button"
-                          onClick={()=>setForm(p=>({...p,avatar:av.id}))}
-                          style={{
-                            aspectRatio:'1', padding:'4px',
-                            borderRadius:'14px', cursor:'pointer',
-                            border:`2px solid ${form.avatar===av.id?'#7F77DD':'rgba(38,33,92,0.8)'}`,
-                            background:form.avatar===av.id?'rgba(127,119,221,0.18)':'rgba(255,255,255,0.03)',
-                            transition:'all 0.18s',
-                            display:'flex', alignItems:'center', justifyContent:'center',
-                            overflow:'hidden',
-                            boxShadow: form.avatar===av.id ? '0 0 10px rgba(127,119,221,0.35)' : 'none',
-                          }}>
-                          <AvatarDisplay id={av.id} size={52} />
-                        </button>
-                      ))}
+                {/* 注册表单 */}
+                {mode === 'register' && (
+                  <form onSubmit={handleRegister} style={{ display:'flex', flexDirection:'column', gap:'0.9rem' }}>
+                    <div>
+                      <label style={LS}>探索者名字 <span style={{color:'#7F77DD'}}>*</span></label>
+                      <input type="text" placeholder="输入你的名字"
+                        value={form.name} maxLength={20} autoFocus
+                        onChange={e=>{setForm(p=>({...p,name:e.target.value}));setErr('')}}
+                        style={IS(false)}/>
                     </div>
-                  </div>
-                  <button type="submit" style={{
-                    marginTop:'0.25rem', width:'100%', padding:'0.85rem',
-                    background:'#7F77DD', border:'none', borderRadius:'12px',
-                    color:'#EEEDFE', fontSize:'0.85rem', fontWeight:500,
-                    cursor:'pointer', letterSpacing:'0.06em',
-                    fontFamily:'var(--font-english)', transition:'all 0.2s',
-                  }}
-                    onMouseEnter={e=>e.currentTarget.style.background='#9088e8'}
-                    onMouseLeave={e=>e.currentTarget.style.background='#7F77DD'}
-                    onMouseDown={e=>e.currentTarget.style.transform='scale(0.97)'}
-                    onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
-                  >开始探索宇宙 →</button>
-                </form>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.7rem' }}>
+                      <div>
+                        <label style={LS}>年级</label>
+                        <select value={form.grade} onChange={e=>setForm(p=>({...p,grade:e.target.value}))}
+                          style={{...IS(false), appearance:'none'}}>
+                          <option value="">选择年级</option>
+                          {['一年级','二年级','三年级','四年级','五年级','六年级'].map(g=>(
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={LS}>班级</label>
+                        <select value={form.class_name} onChange={e=>setForm(p=>({...p,class_name:e.target.value}))}
+                          style={{...IS(false), appearance:'none'}}>
+                          <option value="">选择班级</option>
+                          {['一班','二班','三班','四班','五班','六班','七班','八班','九班','十班','其他'].map(c=>(
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={LS}>学校</label>
+                      <SchoolSearchInput
+                        value={form.school}
+                        onChange={school=>setForm(p=>({...p,school}))}
+                        placeholder="搜索学校名称（如：实验小学）"
+                      />
+                    </div>
+                    <div>
+                      <label style={LS}>选择你的头像</label>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.5rem', marginTop:'0.4rem' }}>
+                        {AVATAR_LIST.map(av=>(
+                          <button key={av.id} type="button" onClick={()=>setForm(p=>({...p,avatar:av.id}))}
+                            style={{
+                              aspectRatio:'1', padding:'4px', borderRadius:'14px', cursor:'pointer',
+                              border:`2px solid ${form.avatar===av.id?'#7F77DD':'rgba(38,33,92,0.8)'}`,
+                              background:form.avatar===av.id?'rgba(127,119,221,0.18)':'rgba(255,255,255,0.03)',
+                              transition:'all 0.18s', display:'flex', alignItems:'center', justifyContent:'center',
+                              overflow:'hidden',
+                              boxShadow: form.avatar===av.id ? '0 0 10px rgba(127,119,221,0.35)' : 'none',
+                            }}>
+                            <AvatarDisplay id={av.id} size={48} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{...LS, textAlign:'center', marginBottom:'0.7rem'}}>
+                        设置 4 位 PIN <span style={{color:'#7F77DD'}}>*</span>
+                        <span style={{color:'#6b66b0', fontSize:'0.75rem', marginLeft:'0.4rem'}}>用于换设备找回进度</span>
+                      </label>
+                      <PinInput value={form.pin} onChange={pin=>setForm(p=>({...p,pin}))} hasError={false}/>
+                    </div>
+                    {err && <p style={{color:'var(--danger)', fontSize:'0.8rem', textAlign:'center', margin:0}}>{err}</p>}
+                    <button type="submit" disabled={loading} style={{
+                      marginTop:'0.15rem', width:'100%', padding:'0.85rem',
+                      background: loading ? '#534AB7' : '#7F77DD', border:'none', borderRadius:'12px',
+                      color:'#EEEDFE', fontSize:'0.85rem', fontWeight:500,
+                      cursor: loading ? 'not-allowed' : 'pointer', letterSpacing:'0.06em',
+                      transition:'all 0.2s',
+                    }}>
+                      {loading ? '创建中...' : '开始探索宇宙 →'}
+                    </button>
+                  </form>
+                )}
+
+                {/* 找回进度表单 */}
+                {mode === 'login' && (
+                  <form onSubmit={handleLogin} style={{ display:'flex', flexDirection:'column', gap:'0.9rem' }}>
+                    <div>
+                      <label style={LS}>探索者名字 <span style={{color:'#7F77DD'}}>*</span></label>
+                      <input type="text" placeholder="输入你的名字"
+                        value={form.name} maxLength={20} autoFocus
+                        onChange={e=>{setForm(p=>({...p,name:e.target.value}));setErr('')}}
+                        style={IS(false)}/>
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.7rem' }}>
+                      <div>
+                        <label style={LS}>年级</label>
+                        <select value={form.grade} onChange={e=>setForm(p=>({...p,grade:e.target.value}))}
+                          style={{...IS(false), appearance:'none'}}>
+                          <option value="">选择年级</option>
+                          {['一年级','二年级','三年级','四年级','五年级','六年级'].map(g=>(
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={LS}>班级</label>
+                        <select value={form.class_name} onChange={e=>setForm(p=>({...p,class_name:e.target.value}))}
+                          style={{...IS(false), appearance:'none'}}>
+                          <option value="">选择班级</option>
+                          {['一班','二班','三班','四班','五班','六班','七班','八班','九班','十班','其他'].map(c=>(
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={LS}>学校</label>
+                      <SchoolSearchInput
+                        value={form.school}
+                        onChange={school=>setForm(p=>({...p,school}))}
+                        placeholder="搜索学校名称（如：实验小学）"
+                      />
+                    </div>
+                    <div>
+                      <label style={{...LS, textAlign:'center', marginBottom:'0.7rem'}}>输入 4 位 PIN</label>
+                      <PinInput value={form.pin} onChange={pin=>setForm(p=>({...p,pin}))} hasError={!!err}/>
+                    </div>
+                    {err && <p style={{color:'var(--danger)', fontSize:'0.8rem', textAlign:'center', margin:0}}>{err}</p>}
+                    <button type="submit" disabled={loading} style={{
+                      marginTop:'0.15rem', width:'100%', padding:'0.85rem',
+                      background: loading ? '#534AB7' : '#7F77DD', border:'none', borderRadius:'12px',
+                      color:'#EEEDFE', fontSize:'0.85rem', fontWeight:500,
+                      cursor: loading ? 'not-allowed' : 'pointer', letterSpacing:'0.06em',
+                      transition:'all 0.2s',
+                    }}>
+                      {loading ? '验证中...' : '找回我的进度 →'}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </>

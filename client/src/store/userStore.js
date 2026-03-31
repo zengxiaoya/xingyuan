@@ -10,6 +10,7 @@ export const useUserStore = create(
         const user = {
           name: userData.name || '',
           grade: userData.grade || '',
+          class_name: userData.class_name || '',
           school: userData.school || '',
           avatar: userData.avatar || '🚀',
         }

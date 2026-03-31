@@ -1,16 +1,40 @@
 const BASE_URL = '/api'
 
+/** 注册新账号 */
+export async function registerUser(data) {
+  const res = await fetch(`${BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || '注册失败')
+  return json
+}
+
+/** 登录 / 找回进度 */
+export async function loginUser(data) {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || '登录失败')
+  return json
+}
+
 /**
  * 获取题目
  * @param {string} levelId - 关卡ID
  * @param {string} type - 题目类型（如 'choice', 'fillblank', 'creative'）
  * @returns {Promise<object>} 题目数据
  */
-export async function fetchQuiz(levelId, type) {
+export async function fetchQuiz(levelId, type, slot = 0) {
   const res = await fetch(`${BASE_URL}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ levelId, type })
+    body: JSON.stringify({ levelId, type, slot })
   })
   if (!res.ok) throw new Error('获取题目失败')
   return res.json()
@@ -91,17 +115,48 @@ export async function* streamChat(messages, context, userInfo) {
 }
 
 /**
- * 生成 NOVA 结业评语
- * @param {{ name: string, grade: string, school: string }} userInfo
- * @param {{ stars: number, badgeCount: number, scientistCount: number }} progress
- * @returns {Promise<{ evaluation: string }>}
+ * 记录答题结果（fire-and-forget，用于错题分析）
+ * @param {{ name, school, grade, class_name }} user
+ * @param {string} levelId
+ * @param {string} type - 'choice' | 'multi'
+ * @param {boolean} isCorrect
  */
-export async function generateCertificateEvaluation(userInfo, progress) {
-  const res = await fetch(`${BASE_URL}/certificate`, {
+export function syncQuizResult(user, levelId, type, isCorrect) {
+  if (!user?.name) return
+  fetch(`${BASE_URL}/sync/quiz-result`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...userInfo, ...progress })
-  })
-  if (!res.ok) throw new Error('生成评语失败')
-  return res.json()
+    body: JSON.stringify({
+      name: user.name,
+      school: user.school || '',
+      grade: user.grade || '',
+      class_name: user.class_name || '',
+      levelId,
+      type,
+      isCorrect,
+    }),
+  }).catch(() => {})
+}
+
+/**
+ * 生成 NOVA 结业评语（数据由服务端从数据库读取）
+ * LLM 生成较慢，timeout 设 300s
+ * @param {{ name: string, school: string }} userInfo
+ * @returns {Promise<{ evaluation: string }>}
+ */
+export async function generateCertificateEvaluation(userInfo) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 300_000)
+  try {
+    const res = await fetch(`${BASE_URL}/certificate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userInfo),
+      signal: controller.signal,
+    })
+    if (!res.ok) throw new Error('生成评语失败')
+    return res.json()
+  } finally {
+    clearTimeout(timer)
+  }
 }

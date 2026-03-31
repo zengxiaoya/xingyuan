@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import OpenAI from 'openai';
 import { getQuizPrompt } from '../prompts/templates.js';
+import db from '../db/index.js';
 
 const router = Router();
 
@@ -295,7 +296,7 @@ const FALLBACK_QUESTIONS = {
 // ─── 路由处理 ─────────────────────────────────────────────────────────────────
 
 router.post('/', async (req, res) => {
-  const { levelId, type } = req.body;
+  const { levelId, type, slot = 0 } = req.body;
 
   // 参数校验
   if (!levelId || !type) {
@@ -307,6 +308,25 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: `type 参数无效，必须是 ${validTypes.join('/')} 之一` });
   }
 
+  // ── 缓存优先 ────────────────────────────────────────────────────────────────
+  // slot 参数使同一关卡同时请求多道同类题时返回不同条目，避免重复
+  const cacheCount = db.prepare(
+    'SELECT COUNT(*) AS cnt FROM quiz_cache WHERE level_id = ? AND type = ?'
+  ).get(levelId, type).cnt;
+
+  if (cacheCount >= 3) {
+    const offset = Number.isInteger(slot) && slot >= 0 ? slot % cacheCount : 0;
+    const cached = db.prepare(
+      'SELECT question FROM quiz_cache WHERE level_id = ? AND type = ? ORDER BY id LIMIT 1 OFFSET ?'
+    ).get(levelId, type, offset);
+    try {
+      return res.json(JSON.parse(cached.question));
+    } catch {
+      // 缓存数据损坏，降级到 LLM 生成
+    }
+  }
+
+  // ── LLM 生成 ─────────────────────────────────────────────────────────────────
   try {
     const client = getKimiClient();
     const systemPrompt = getQuizPrompt(levelId, type);
@@ -330,6 +350,17 @@ router.post('/', async (req, res) => {
     }
 
     const question = JSON.parse(jsonMatch[0]);
+
+    // 写入缓存，并修剪超出上限的旧条目（最多保留 10 条）
+    db.prepare('INSERT INTO quiz_cache (level_id, type, question) VALUES (?, ?, ?)').run(
+      levelId, type, JSON.stringify(question)
+    );
+    db.prepare(`
+      DELETE FROM quiz_cache WHERE level_id = ? AND type = ? AND id NOT IN (
+        SELECT id FROM quiz_cache WHERE level_id = ? AND type = ? ORDER BY created_at DESC LIMIT 10
+      )
+    `).run(levelId, type, levelId, type);
+
     return res.json(question);
   } catch (err) {
     console.error('[quiz] API 调用失败，使用 fallback 数据:', err.message);

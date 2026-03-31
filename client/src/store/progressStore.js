@@ -11,6 +11,8 @@ function syncProgress(state) {
     body: JSON.stringify({
       name: user.name,
       school: user.school,
+      grade: user.grade,
+      class_name: user.class_name,
       stars: state.stars,
       badges: state.badges,
       scientists: state.scientists,
@@ -78,6 +80,15 @@ export const useProgressStore = create(
         })),
 
       setNovaEvaluation: (text) => set({ novaEvaluation: text }),
+
+      // 登录找回进度时，用数据库数据覆盖本地 localStorage
+      restoreFromDB: (data) => set({
+        stars: data.stars || 0,
+        badges: data.badges || [],
+        scientists: data.scientists || [],
+        creativeAnswers: data.creativeAnswers || {},
+        novaEvaluation: data.novaEvaluation || '',
+      }),
 
       completeLevel: (levelId, starsEarned, scientistIds) => {
         const state = get()

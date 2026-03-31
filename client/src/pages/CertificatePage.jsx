@@ -82,19 +82,15 @@ export default function CertificatePage() {
   const dateEN = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
 
   useEffect(() => {
-    if (isGraduated && !novaEvaluation && !generating) {
-      setGenerating(true)
-      generateCertificateEvaluation(
-        { name: user?.name, grade: user?.grade, school: user?.school },
-        { stars, badgeCount: badges.length, scientistCount: scientists.length }
-      )
-        .then(({ evaluation }) => { if (evaluation) setNovaEvaluation(evaluation) })
-        .catch(() => setNovaEvaluation(
-          `${user?.name}，你用好奇心照亮了每一颗星球！NOVA 为你骄傲，愿你的未来像宇宙一样无边无际！`
-        ))
-        .finally(() => setGenerating(false))
-    }
-  }, [isGraduated])
+    if (!isGraduated || novaEvaluation) return
+    setGenerating(true)
+    generateCertificateEvaluation({ name: user?.name, school: user?.school, grade: user?.grade, class_name: user?.class_name })
+      .then(({ evaluation }) => { if (evaluation) setNovaEvaluation(evaluation) })
+      .catch(() => setNovaEvaluation(
+        `${user?.name}，你用好奇心照亮了每一颗星球！NOVA 为你骄傲，愿你的未来像宇宙一样无边无际！`
+      ))
+      .finally(() => setGenerating(false))
+  }, [isGraduated, novaEvaluation, user?.name, user?.school, user?.grade, user?.class_name])
 
   async function handleDownload() {
     if (!certRef.current || downloading) return

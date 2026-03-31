@@ -5,7 +5,8 @@ import { SCIENTISTS } from '../data/scientists.js'
 import { PLANET_FACTS } from '../data/planetFacts.js'
 import { useProgressStore } from '../store/progressStore.js'
 import { useNovaStore } from '../store/novaStore.js'
-import { fetchQuiz, evaluateAnswer } from '../utils/api.js'
+import { fetchQuiz, evaluateAnswer, syncQuizResult } from '../utils/api.js'
+import { useUserStore } from '../store/userStore.js'
 import Icon from '../components/Icon.jsx'
 
 // 阶段：intro → learn → loading → q1/q1_fb → q2/q2_fb → q3/q3_fb → q4/q4_fb → q5/q5_fb → complete
@@ -38,6 +39,7 @@ export default function LevelPage() {
   const facts  = PLANET_FACTS[levelId] || []
   const { isLevelUnlocked, completeLevel, isLevelCompleted, saveCreativeAnswer } = useProgressStore()
   const openNova = useNovaStore(s => s.openNova)
+  const user = useUserStore(s => s.user)
 
   const [phase, setPhase]           = useState(PHASES.INTRO)
   const [learnIndex, setLearnIndex] = useState(0)
@@ -67,6 +69,8 @@ export default function LevelPage() {
   const [overlay, setOverlay] = useState(null)
   const overlayTimer = useRef(null)
 
+  useEffect(() => () => { if (overlayTimer.current) clearTimeout(overlayTimer.current) }, [])
+
   const runningStars = cStars[0] + cStars[1] + cStars[2] + mStars
   const alreadyDone  = isLevelCompleted(levelId)
 
@@ -91,11 +95,11 @@ export default function LevelPage() {
     setPhase(PHASES.LOADING)
     try {
       const [c1, c2, c3, multi, creative] = await Promise.all([
-        fetchQuiz(levelId, 'choice'),
-        fetchQuiz(levelId, 'choice'),
-        fetchQuiz(levelId, 'choice'),
-        fetchQuiz(levelId, 'multi'),
-        fetchQuiz(levelId, 'creative'),
+        fetchQuiz(levelId, 'choice', 0),
+        fetchQuiz(levelId, 'choice', 1),
+        fetchQuiz(levelId, 'choice', 2),
+        fetchQuiz(levelId, 'multi', 0),
+        fetchQuiz(levelId, 'creative', 0),
       ])
       setChoiceQs([c1, c2, c3])
       setMultiQ(multi)
@@ -125,6 +129,7 @@ export default function LevelPage() {
       const stars = attempt === 1 ? 10 : 5
       setCStars(prev => { const n = [...prev]; n[qi] = stars; return n })
       setCResult(prev => { const n = [...prev]; n[qi] = 'correct'; return n })
+      syncQuizResult(user, levelId, 'choice', true)
       showOverlay('correct', '正确！⭐', 1600)
       setTimeout(() => setPhase(CHOICE_FB[qi]), 1700)
     } else {
@@ -134,6 +139,7 @@ export default function LevelPage() {
         setOverlay(null)
         if (attempt >= 2) {
           setCResult(prev => { const n = [...prev]; n[qi] = 'wrong_final'; return n })
+          syncQuizResult(user, levelId, 'choice', false)
           setPhase(CHOICE_FB[qi])
         } else {
           setCResult(prev => { const n = [...prev]; n[qi] = null; return n })
@@ -161,6 +167,7 @@ export default function LevelPage() {
       const stars = attempt === 1 ? 10 : 5
       setMStars(stars)
       setMResult('correct')
+      syncQuizResult(user, levelId, 'multi', true)
       showOverlay('correct', '全对！🎉', 1600)
       setTimeout(() => setPhase(PHASES.Q4_FB), 1700)
     } else {
@@ -170,6 +177,7 @@ export default function LevelPage() {
         setOverlay(null)
         if (attempt >= 2) {
           setMResult('wrong_final')
+          syncQuizResult(user, levelId, 'multi', false)
           setPhase(PHASES.Q4_FB)
         } else {
           setMResult(null)

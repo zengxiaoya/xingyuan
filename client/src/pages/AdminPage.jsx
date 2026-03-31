@@ -223,7 +223,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
 // ── 编辑用户弹窗 ──────────────────────────────────────────────────────────────
 
 function EditModal({ user, onSave, onClose }) {
-  const [form, setForm] = useState({ name: user.name, school: user.school, grade: user.grade, avatar: user.avatar })
+  const [form, setForm] = useState({ name: user.name, school: user.school, grade: user.grade, class_name: user.class_name || '', avatar: user.avatar })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -238,7 +238,7 @@ function EditModal({ user, onSave, onClose }) {
     <div style={overlayStyle}>
       <div style={modalStyle}>
         <div style={{ color: C.text, fontWeight: 600, fontSize: '1rem', marginBottom: '1.25rem' }}>编辑用户</div>
-        {[['姓名', 'name'], ['学校', 'school'], ['年级', 'grade']].map(([label, field]) => (
+        {[['姓名', 'name'], ['学校', 'school'], ['年级', 'grade'], ['班级', 'class_name']].map(([label, field]) => (
           <div key={field} style={{ marginBottom: '12px' }}>
             <label style={{ display: 'block', fontSize: '0.75rem', color: C.muted, marginBottom: '4px' }}>{label}</label>
             <input value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} style={inputStyle} />
@@ -295,6 +295,9 @@ export default function AdminPage() {
   const [editUser, setEditUser] = useState(null)
   const [answersUser, setAnswersUser] = useState(null)
   const [confirm, setConfirm] = useState(null)
+  const [activeTab, setActiveTab] = useState('users') // 'users' | 'stats'
+  const [stats, setStats] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   const fetchUsers = useCallback(async () => {
     if (!token) return
@@ -346,10 +349,24 @@ export default function AdminPage() {
     })
   }
 
+  async function fetchStats() {
+    setStatsLoading(true)
+    try {
+      setStats(await apiFetch('/stats', 'GET', null, token))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
   if (!token) return <LoginScreen onLogin={login} />
 
   const filtered = search
-    ? users.filter(u => u.name.includes(search) || u.school.includes(search) || u.grade.includes(search))
+    ? users.filter(u =>
+        u.name.includes(search) || u.school.includes(search) ||
+        u.grade.includes(search) || (u.class_name || '').includes(search)
+      )
     : users
 
   const totalStars = users.reduce((s, u) => s + (u.stars || 0), 0)
@@ -386,81 +403,196 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* ── Tab 切换 ── */}
+      <div style={{ background: 'rgba(6,3,24,.95)', borderBottom: `1px solid ${C.border}`, padding: '0 1.5rem' }}>
+        {[['users', '用户管理'], ['stats', '统计分析']].map(([key, label]) => (
+          <button key={key} onClick={() => { setActiveTab(key); if (key === 'stats' && !stats) fetchStats() }}
+            style={{
+              padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer',
+              color: activeTab === key ? C.accent : C.muted,
+              borderBottom: activeTab === key ? `2px solid ${C.accent}` : '2px solid transparent',
+              fontWeight: activeTab === key ? 600 : 400, fontSize: '0.88rem', transition: 'all .2s',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* ── 内容区 ── */}
       <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '1.5rem' }}>
 
-        {/* 搜索栏 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <input
-            placeholder="搜索姓名、学校、年级..."
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ ...inputStyle, width: '280px' }}
-          />
-          <span style={{ color: C.muted, fontSize: '0.8rem' }}>共 {filtered.length} 名用户</span>
-          <button onClick={fetchUsers} style={{ ...btnSecondary, marginLeft: 'auto' }}>↻ 刷新</button>
-        </div>
-
         {error && <div style={{ color: C.danger, marginBottom: '1rem', fontSize: '0.85rem' }}>⚠ {error}</div>}
 
-        {/* 表格 */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>加载中...</div>
-        ) : (
-          <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.border}` }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid ${C.border}` }}>
-                  {['头像', '姓名', '学校', '年级', '⭐ 星星', '通关进度', '科学家', '创意答案', '注册时间', '最后活跃', '操作'].map(h => (
-                    <th key={h} style={{ padding: '12px 14px', textAlign: 'left', color: C.muted, fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr><td colSpan={11} style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>
-                    {search ? '没有匹配的用户' : '暂无用户数据'}
-                  </td></tr>
-                )}
-                {filtered.map((u, i) => (
-                  <tr key={u.id}
-                    style={{ borderBottom: i < filtered.length - 1 ? `1px solid rgba(127,119,221,.07)` : 'none', transition: 'background .15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,.04)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={td}><span style={{ fontSize: '1.5rem' }}>{u.avatar}</span></td>
-                    <td style={{ ...td, fontWeight: 600, color: C.text }}>{u.name}</td>
-                    <td style={{ ...td, color: C.muted }}>{u.school || <span style={{ opacity: 0.4 }}>-</span>}</td>
-                    <td style={{ ...td, color: C.muted }}>{u.grade || <span style={{ opacity: 0.4 }}>-</span>}</td>
-                    <td style={td}><span style={{ color: C.warn, fontWeight: 700 }}>{u.stars ?? '-'}</span></td>
-                    <td style={td}>
-                      <span style={{ color: u.badges?.length ? C.success : C.muted }}>
-                        {u.badges?.length ?? 0} / 9
-                      </span>
-                    </td>
-                    <td style={{ ...td, color: C.muted }}>{u.scientists?.length ?? 0} / 13</td>
-                    <td style={td}>
-                      {Object.keys(u.creative_answers || {}).length > 0
-                        ? <button onClick={() => setAnswersUser(u)} style={{ ...actionBtn, color: C.accent }}>
-                            查看 ({Object.keys(u.creative_answers).length})
-                          </button>
-                        : <span style={{ color: C.muted, opacity: 0.4 }}>-</span>
-                      }
-                    </td>
-                    <td style={{ ...td, color: C.muted, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(u.created_at)}</td>
-                    <td style={{ ...td, color: C.muted, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(u.last_active)}</td>
-                    <td style={td}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => setEditUser(u)} style={actionBtn}>编辑</button>
-                        <button onClick={() => handleResetProgress(u.id, u.name)}
-                          style={{ ...actionBtn, color: C.warn, borderColor: 'rgba(239,159,39,.3)' }}>重置</button>
-                        <button onClick={() => handleDelete(u.id, u.name)}
-                          style={{ ...actionBtn, color: C.danger, borderColor: 'rgba(224,85,85,.3)' }}>删除</button>
-                      </div>
-                    </td>
+        {/* ── 用户管理 Tab ── */}
+        {activeTab === 'users' && (<>
+          {/* 搜索栏 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <input
+              placeholder="搜索姓名、学校、年级..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              style={{ ...inputStyle, width: '280px' }}
+            />
+            <span style={{ color: C.muted, fontSize: '0.8rem' }}>共 {filtered.length} 名用户</span>
+            <button onClick={fetchUsers} style={{ ...btnSecondary, marginLeft: 'auto' }}>↻ 刷新</button>
+          </div>
+
+          {/* 表格 */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>加载中...</div>
+          ) : (
+            <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.border}` }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid ${C.border}` }}>
+                    {['头像', '姓名', '学校', '年级', '班级', '⭐ 星星', '通关进度', '科学家', '创意答案', '注册时间', '最后活跃', '操作'].map(h => (
+                      <th key={h} style={{ padding: '12px 14px', textAlign: 'left', color: C.muted, fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={12} style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>
+                      {search ? '没有匹配的用户' : '暂无用户数据'}
+                    </td></tr>
+                  )}
+                  {filtered.map((u, i) => (
+                    <tr key={u.id}
+                      style={{ borderBottom: i < filtered.length - 1 ? `1px solid rgba(127,119,221,.07)` : 'none', transition: 'background .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,.04)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={td}><span style={{ fontSize: '1.5rem' }}>{u.avatar}</span></td>
+                      <td style={{ ...td, fontWeight: 600, color: C.text }}>{u.name}</td>
+                      <td style={{ ...td, color: C.muted }}>{u.school || <span style={{ opacity: 0.4 }}>-</span>}</td>
+                      <td style={{ ...td, color: C.muted }}>{u.grade || <span style={{ opacity: 0.4 }}>-</span>}</td>
+                      <td style={{ ...td, color: C.muted }}>{u.class_name || <span style={{ opacity: 0.4 }}>-</span>}</td>
+                      <td style={td}><span style={{ color: C.warn, fontWeight: 700 }}>{u.stars ?? '-'}</span></td>
+                      <td style={td}>
+                        <span style={{ color: u.badges?.length ? C.success : C.muted }}>
+                          {u.badges?.length ?? 0} / 9
+                        </span>
+                      </td>
+                      <td style={{ ...td, color: C.muted }}>{u.scientists?.length ?? 0} / 13</td>
+                      <td style={td}>
+                        {Object.keys(u.creative_answers || {}).length > 0
+                          ? <button onClick={() => setAnswersUser(u)} style={{ ...actionBtn, color: C.accent }}>
+                              查看 ({Object.keys(u.creative_answers).length})
+                            </button>
+                          : <span style={{ color: C.muted, opacity: 0.4 }}>-</span>
+                        }
+                      </td>
+                      <td style={{ ...td, color: C.muted, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(u.created_at)}</td>
+                      <td style={{ ...td, color: C.muted, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(u.last_active)}</td>
+                      <td style={td}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={() => setEditUser(u)} style={actionBtn}>编辑</button>
+                          <button onClick={() => handleResetProgress(u.id, u.name)}
+                            style={{ ...actionBtn, color: C.warn, borderColor: 'rgba(239,159,39,.3)' }}>重置</button>
+                          <button onClick={() => handleDelete(u.id, u.name)}
+                            style={{ ...actionBtn, color: C.danger, borderColor: 'rgba(224,85,85,.3)' }}>删除</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>)}
+
+        {/* ── 统计分析 Tab ── */}
+        {activeTab === 'stats' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <span style={{ color: C.text, fontWeight: 600 }}>统计分析</span>
+              <button onClick={fetchStats} style={{ ...btnSecondary, marginLeft: 'auto' }}>↻ 刷新</button>
+            </div>
+            {statsLoading ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>加载中...</div>
+            ) : !stats ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: C.muted }}>暂无数据</div>
+            ) : (<>
+              {/* 班级分布 */}
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ color: C.accent, fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.9rem' }}>班级分布</div>
+                <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.border}` }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid ${C.border}` }}>
+                        {['学校', '年级', '班级', '人数', '平均星星', '平均通关数'].map(h => (
+                          <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: C.muted, fontWeight: 500, fontSize: '0.78rem' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.classes.length === 0 && (
+                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: C.muted }}>暂无数据</td></tr>
+                      )}
+                      {stats.classes.map((c, i) => (
+                        <tr key={i}
+                          style={{ borderBottom: i < stats.classes.length - 1 ? `1px solid rgba(127,119,221,.07)` : 'none' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,.04)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ ...td, color: C.text }}>{c.school || '-'}</td>
+                          <td style={{ ...td, color: C.muted }}>{c.grade || '-'}</td>
+                          <td style={{ ...td, color: C.muted }}>{c.class_name || '-'}</td>
+                          <td style={{ ...td, color: C.accent, fontWeight: 600 }}>{c.user_count}</td>
+                          <td style={{ ...td, color: C.warn }}>{c.avg_stars ?? '-'}</td>
+                          <td style={{ ...td, color: C.success }}>{c.avg_completion ?? '-'} / 9</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 薄弱关卡 */}
+              <div>
+                <div style={{ color: C.accent, fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                  薄弱关卡 <span style={{ fontSize: '0.75rem', color: C.muted, fontWeight: 400 }}>（≥5次作答，失败率最高）</span>
+                </div>
+                {stats.weakLevels.length === 0 ? (
+                  <div style={{ color: C.muted, padding: '2rem', textAlign: 'center', background: 'rgba(127,119,221,.04)', borderRadius: '12px', border: `1px solid ${C.border}` }}>
+                    暂无足够数据（需要至少5次答题记录）
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.border}` }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid ${C.border}` }}>
+                          {['关卡', '题型', '总次数', '失败次数', '失败率'].map(h => (
+                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: C.muted, fontWeight: 500, fontSize: '0.78rem' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.weakLevels.map((w, i) => (
+                          <tr key={i}
+                            style={{ borderBottom: i < stats.weakLevels.length - 1 ? `1px solid rgba(127,119,221,.07)` : 'none' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,.04)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <td style={{ ...td, color: C.text, fontWeight: 600 }}>{w.level_id}</td>
+                            <td style={{ ...td, color: C.muted }}>{w.type}</td>
+                            <td style={{ ...td, color: C.muted }}>{w.total}</td>
+                            <td style={{ ...td, color: C.danger }}>{w.fail_count}</td>
+                            <td style={td}>
+                              <span style={{
+                                color: w.fail_rate >= 60 ? C.danger : w.fail_rate >= 40 ? C.warn : C.success,
+                                fontWeight: 700,
+                              }}>
+                                {w.fail_rate}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>)}
           </div>
         )}
       </div>

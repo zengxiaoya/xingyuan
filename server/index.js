@@ -12,6 +12,7 @@ import evaluateRouter from './routes/evaluate.js';
 import certificateRouter from './routes/certificate.js';
 import syncRouter from './routes/sync.js';
 import adminRouter from './routes/admin.js';
+import authRouter from './routes/auth.js';
 import './db/index.js'; // 初始化数据库
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/evaluate', evaluateRouter);
 app.use('/api/certificate', certificateRouter);
 app.use('/api/sync', syncRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/auth', authRouter);
 
 // 健康检查端点
 app.get('/health', (req, res) => {
@@ -93,7 +95,7 @@ app.use((err, req, res, next) => {
 
 // ─── 启动服务器 ───────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+if (process.env.NODE_ENV !== 'test') app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════╗
 ║        星渊后端服务已启动            ║
