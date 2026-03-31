@@ -1,5 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useUserStore } from './userStore.js'
+
+function syncProgress(state) {
+  const user = useUserStore.getState().user
+  if (!user?.name) return
+  fetch('/api/sync/progress', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: user.name,
+      school: user.school,
+      stars: state.stars,
+      badges: state.badges,
+      scientists: state.scientists,
+      creativeAnswers: state.creativeAnswers,
+      novaEvaluation: state.novaEvaluation,
+    }),
+  }).catch(() => {})
+}
 
 const LV1_LEVELS = ['solar_lv1', 'explore_lv1', 'universe_lv1']
 
@@ -78,6 +97,8 @@ export const useProgressStore = create(
             stars: alreadyCompleted ? s.stars : s.stars + (starsEarned || 0)
           }
         })
+        // 同步最新进度到数据库
+        syncProgress(get())
       },
 
       isLevelUnlocked: (levelId) => {

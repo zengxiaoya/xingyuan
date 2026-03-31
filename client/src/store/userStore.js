@@ -6,15 +6,20 @@ export const useUserStore = create(
     (set) => ({
       user: null,
 
-      setUser: (userData) =>
-        set({
-          user: {
-            name: userData.name || '',
-            grade: userData.grade || '',
-            school: userData.school || '',
-            avatar: userData.avatar || '🚀'
-          }
-        }),
+      setUser: (userData) => {
+        const user = {
+          name: userData.name || '',
+          grade: userData.grade || '',
+          school: userData.school || '',
+          avatar: userData.avatar || '🚀',
+        }
+        set({ user })
+        fetch('/api/sync/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(user),
+        }).catch(() => {})
+      },
 
       clearUser: () => set({ user: null })
     }),

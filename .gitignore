@@ -2,3 +2,19 @@
 node_modules
 server/data/*.db
 server/.env
+
+# 部署脚本（含服务器 IP 等信息）
+update.sh
+deploy.sh
+setup-ssh-server.sh
+
+# 构建产物
+dist/
+client/dist/
+
+# 本地文件
+.DS_Store
+*.local
+
+# 设计稿
+ude-design/

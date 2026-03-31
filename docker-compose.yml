@@ -12,6 +12,8 @@ services:
       - NODE_ENV=production
     expose:
       - "3001"
+    volumes:
+      - sqlite_data:/app/data
     networks:
       - app-net
 
@@ -42,3 +44,6 @@ services:
 networks:
   app-net:
     driver: bridge
+
+volumes:
+  sqlite_data:

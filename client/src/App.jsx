@@ -34,6 +34,7 @@ const HallPage = lazy(() => import('./pages/HallPage.jsx'))
 const ScientistDetailPage = lazy(() => import('./pages/ScientistDetailPage.jsx'))
 const AchievementPage = lazy(() => import('./pages/AchievementPage.jsx'))
 const CertificatePage = lazy(() => import('./pages/CertificatePage.jsx'))
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
 
 function ProtectedRoute({ children }) {
   const user = useUserStore((state) => state.user)
@@ -125,6 +126,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

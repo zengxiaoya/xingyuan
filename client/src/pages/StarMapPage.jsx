@@ -45,6 +45,13 @@ export default function StarMapPage() {
   const mapRef      = useRef()
   const planetImgs  = useRef({})
   const [tooltip, setTooltip] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const completedCount = NODES.filter(n => isLevelCompleted(n.id)).length
 
@@ -186,13 +193,14 @@ export default function StarMapPage() {
       })
 
       // ── Nodes
+      const scale = Math.min(1, W / 420)
       NODES.forEach(n => {
         const { x, y } = getPos(n)
         const state = getState(n.id)
         const isDone   = state === 'done'
         const isActive = state === 'active'
         const thC = THEME[n.theme] || THEME.solar
-        const r = isDone ? 23 : isActive ? 24 : 20
+        const r = (isDone ? 23 : isActive ? 24 : 20) * scale
 
         // Outer pulse rings
         if (isActive) {
@@ -293,18 +301,20 @@ export default function StarMapPage() {
         // Label
         const lv = LEVELS[n.id]
         const labelText = lv ? lv.title : n.label
+        const labelFontSize = Math.max(8, 10.5 * scale)
+        const badgeFontSize = Math.max(7, 8 * scale)
         ctx.fillStyle = isDone  ? 'rgba(29,158,117,.85)'
           : isActive ? thC.base + 'cc'
           : 'rgba(180,165,240,.8)'
-        ctx.font = `${isActive ? '600' : '400'} 10.5px system-ui`; ctx.textAlign = 'center'
-        ctx.fillText(labelText, x, y + r + 15)
+        ctx.font = `${isActive ? '600' : '400'} ${labelFontSize}px system-ui`; ctx.textAlign = 'center'
+        ctx.fillText(labelText, x, y + r + 13)
 
         // Lv badge
         ctx.fillStyle = isDone  ? 'rgba(29,158,117,.6)'
           : isActive ? thC.glow + '.65)'
           : 'rgba(150,135,220,.7)'
-        ctx.font = '8px Orbitron,system-ui'
-        ctx.fillText('Lv' + n.lv, x, y - r - 5)
+        ctx.font = `${badgeFontSize}px Orbitron,system-ui`
+        ctx.fillText('Lv' + n.lv, x, y - r - 4)
       })
 
       raf = requestAnimationFrame(draw)
@@ -352,17 +362,48 @@ export default function StarMapPage() {
       }
     }
 
+    // Touch support
+    let touchStartNode = null
+    function onTouchStart(e) {
+      e.preventDefault()
+      const touch = e.touches[0]
+      const rect = canvas.getBoundingClientRect()
+      const mx = touch.clientX - rect.left, my = touch.clientY - rect.top
+      touchStartNode = getNodeAt(mx, my)
+      if (touchStartNode) {
+        const state = getState(touchStartNode.id)
+        const areaRect = area.getBoundingClientRect()
+        const tipX = Math.min(touch.clientX - areaRect.left + 14, areaRect.width - 180)
+        const tipY = Math.max(touch.clientY - areaRect.top - 90, 10)
+        setTooltip({ x: tipX, y: tipY, node: touchStartNode, state, levelData: LEVELS[touchStartNode.id] })
+      } else {
+        setTooltip(null)
+      }
+    }
+    function onTouchEnd(e) {
+      if (touchStartNode) {
+        if (getState(touchStartNode.id) !== 'locked') {
+          navigate(`/level/${touchStartNode.id}`)
+        }
+        touchStartNode = null
+      }
+    }
+
     const ro = new ResizeObserver(resize)
     ro.observe(area)
     canvas.addEventListener('mousemove', onMove)
     canvas.addEventListener('mouseleave', () => setTooltip(null))
     canvas.addEventListener('click', onClick)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false })
+    canvas.addEventListener('touchend', onTouchEnd)
 
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
       canvas.removeEventListener('mousemove', onMove)
       canvas.removeEventListener('click', onClick)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchend', onTouchEnd)
     }
   }, [isLevelUnlocked, isLevelCompleted])
 
@@ -379,60 +420,62 @@ export default function StarMapPage() {
       {/* ── Header ── */}
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0.6rem 1.25rem',
+        padding: isMobile ? '0.4rem 0.75rem' : '0.6rem 1.25rem',
         background: 'rgba(6,3,24,.8)',
         borderBottom: '1px solid rgba(127,119,221,.15)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        flexWrap: 'wrap', gap: '0.5rem',
+        gap: '0.4rem',
         position: 'relative', zIndex: 10,
         boxShadow: '0 1px 30px rgba(0,0,0,.5)',
+        flexShrink: 0,
       }}>
         {/* Logo */}
         <div style={{
-          fontFamily: 'var(--font-english)', fontSize: '1.05rem', fontWeight: 700,
+          fontFamily: 'var(--font-english)', fontSize: isMobile ? '0.9rem' : '1.05rem', fontWeight: 700,
           color: '#EEEDFE', letterSpacing: '0.3em',
           background: 'linear-gradient(135deg, #AFA9EC, #7F77DD)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
+          backgroundClip: 'text', flexShrink: 0,
         }}>
           星渊
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.35rem' : '0.65rem', overflow: 'hidden' }}>
           {/* Stars badge */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '4px',
+            display: 'flex', alignItems: 'center', gap: '3px',
             background: 'rgba(239,159,39,.12)',
             border: '1px solid rgba(239,159,39,.3)',
-            borderRadius: '20px', padding: '4px 10px',
+            borderRadius: '20px', padding: isMobile ? '3px 7px' : '4px 10px',
+            flexShrink: 0,
           }}>
-            <svg width="12" height="12" viewBox="0 0 12 12">
+            <svg width="11" height="11" viewBox="0 0 12 12">
               <polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9 3,11 3.5,7.5 1,5 4.5,4.5" fill="#EF9F27"/>
             </svg>
-            <span style={{ fontSize: '0.78rem', color: '#EF9F27', fontWeight: 600 }}>{stars}</span>
+            <span style={{ fontSize: '0.75rem', color: '#EF9F27', fontWeight: 600 }}>{stars}</span>
           </div>
 
           {/* User */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden', minWidth: 0 }}>
             <div style={{
-              width: '34px', height: '34px', borderRadius: '50%',
+              width: isMobile ? '28px' : '34px', height: isMobile ? '28px' : '34px', borderRadius: '50%',
               border: '1.5px solid rgba(127,119,221,.6)',
               overflow: 'hidden', flexShrink: 0,
               boxShadow: '0 0 12px rgba(127,119,221,.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <AvatarDisplay id={user?.avatar} size={34} />
+              <AvatarDisplay id={user?.avatar} size={isMobile ? 28 : 34} />
             </div>
-            <div>
-              <div style={{ fontSize: '0.84rem', color: '#EEEDFE', fontWeight: 500 }}>{user?.name}</div>
-              {user?.grade && <div style={{ fontSize: '0.68rem', color: '#7F77DD' }}>{user.grade}</div>}
+            <div style={{ overflow: 'hidden', minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? '0.75rem' : '0.84rem', color: '#EEEDFE', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+              {!isMobile && user?.grade && <div style={{ fontSize: '0.68rem', color: '#7F77DD' }}>{user.grade}</div>}
             </div>
           </div>
 
           {/* Nav buttons */}
-          <button onClick={() => navigate('/hall')} style={NavBtn}>名人堂</button>
-          <button onClick={() => navigate('/achievement')} style={NavBtn}>成就</button>
+          <button onClick={() => navigate('/hall')} style={{ ...NavBtn, padding: isMobile ? '3px 8px' : '4px 11px', fontSize: isMobile ? '0.68rem' : '11px', flexShrink: 0 }}>名人堂</button>
+          <button onClick={() => navigate('/achievement')} style={{ ...NavBtn, padding: isMobile ? '3px 8px' : '4px 11px', fontSize: isMobile ? '0.68rem' : '11px', flexShrink: 0 }}>成就</button>
         </div>
       </header>
 
@@ -472,7 +515,7 @@ export default function StarMapPage() {
             border: `1px solid ${tooltip.state === 'done' ? 'rgba(29,158,117,.5)' : tooltip.state === 'active' ? `${THEME[tooltip.node.theme]?.base || '#7F77DD'}60` : 'rgba(60,50,100,.5)'}`,
             borderRadius: '12px', padding: '10px 14px',
             fontSize: '12px', color: '#EEEDFE',
-            pointerEvents: 'none', zIndex: 30, minWidth: '160px',
+            pointerEvents: 'none', zIndex: 30, minWidth: '150px', maxWidth: '200px',
             boxShadow: '0 4px 24px rgba(0,0,0,.6)',
             backdropFilter: 'blur(12px)',
           }}>
@@ -506,10 +549,10 @@ export default function StarMapPage() {
 
         {/* Legend */}
         <div style={{
-          position: 'absolute', bottom: '20px', left: '20px', zIndex: 20,
-          display: 'flex', flexDirection: 'column', gap: '5px',
+          position: 'absolute', bottom: isMobile ? '14px' : '20px', left: isMobile ? '14px' : '20px', zIndex: 20,
+          display: 'flex', flexDirection: 'column', gap: '4px',
           background: 'rgba(4,2,18,.7)', borderRadius: '10px',
-          padding: '8px 12px',
+          padding: isMobile ? '6px 10px' : '8px 12px',
           border: '1px solid rgba(83,74,183,.15)',
           backdropFilter: 'blur(8px)',
         }}>
@@ -522,11 +565,11 @@ export default function StarMapPage() {
         </div>
 
         {/* NOVA floating button */}
-        <div style={{ position: 'absolute', bottom: '20px', right: '20px', zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+        <div style={{ position: 'absolute', bottom: isMobile ? '14px' : '20px', right: isMobile ? '14px' : '20px', zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <button
             onClick={() => openNova({ type: 'general' })}
             style={{
-              width: '56px', height: '56px', borderRadius: '50%',
+              width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: '50%',
               background: 'rgba(127,119,221,.18)',
               border: '1.5px solid #7F77DD',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
