@@ -31,7 +31,7 @@
 
 - Node.js >= 18.x
 - pnpm >= 8.x
-- Anthropic API Key（用于 Claude API）
+- Kimi API Key（Moonshot AI，OpenAI 兼容接口）
 
 ### 安装依赖
 
@@ -48,7 +48,9 @@ pnpm install:all
 在项目根目录创建 `.env` 文件：
 
 ```env
-ANTHROPIC_API_KEY=your_api_key_here
+KIMI_API_KEY=your_kimi_api_key_here
+KIMI_MODEL=kimi-k2
+KIMI_BASE_URL=https://api.moonshot.cn/v1
 PORT=3001
 NODE_ENV=development
 ```
@@ -98,7 +100,7 @@ xingyuan/
 |------|------|
 | 登录开场 | 6 幕沉浸式开场序列，收集用户信息 |
 | 星图总览 | 动态星球地图，展示 9 个关卡进度 |
-| 星际闯关 | 3 主题 × 3 等级，跨主题解锁，每关 3 道题 |
+| 星际闯关 | 3 主题 × 3 等级，同主题逐级解锁，每关 5 道题 |
 | NOVA 对话 | 全局 AI 对话，动态表情头像，全屏弹出 |
 | 科学家名人堂 | 通关解锁，名片卡片展示，共 13 位 |
 | 个人成就页 | 数据统计 + 徽章收集 + 创意答案回顾 |
@@ -116,14 +118,14 @@ xingyuan/
 ├── 宇宙探索 Lv1：宇航员和火箭
 └── 宇宙尺度 Lv1：星系和光年
 
-↓ 三个 Lv1 全部通关 → 解锁第二阶段
+↓ 同一主题 Lv1 通关 → 解锁该主题 Lv2
 
 第二阶段
 ├── 太阳系 Lv2：探测器和人类探索
 ├── 宇宙探索 Lv2：空间站和太空生活
 └── 宇宙尺度 Lv2：黑洞和星云
 
-↓ 三个 Lv2 全部通关 → 解锁第三阶段
+↓ 同一主题 Lv2 通关 → 解锁该主题 Lv3
 
 第三阶段
 ├── 太阳系 Lv3：极端环境和生命可能性
@@ -133,10 +135,10 @@ xingyuan/
 
 ### 题型结构
 
-每关包含 3 道题：
-1. **选择题**：4 选 1，有明确对错
-2. **猜谜题**：AI 出谜面，自然语言作答
-3. **创意题**：无标准答案，AI 给个性化反馈
+每关包含 5 道题：
+1. **选择题 × 3**：4 选 1，有明确对错
+2. **多选题 × 1**：4 选多，有 2-3 个正确答案
+3. **创意题 × 1**：无标准答案，AI 给个性化反馈
 
 ---
 
@@ -151,7 +153,8 @@ xingyuan/
 
 ### 后端
 - Node.js + Express（ESM 模块）
-- Claude API（流式输出）
+- Kimi API（OpenAI 兼容接口，支持流式输出）
+- SQLite（better-sqlite3）
 - CORS 跨域支持
 
 ### 部署

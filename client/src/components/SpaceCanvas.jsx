@@ -14,8 +14,9 @@ export default function SpaceCanvas({ warpMode = false, onWarpDone, style }) {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    let W = canvas.width  = window.innerWidth
-    let H = canvas.height = window.innerHeight
+    let W = window.innerWidth
+    let H = window.innerHeight
+    let DPR = Math.min(window.devicePixelRatio || 1, 2)
     const ctx = canvas.getContext('2d')
 
     /* ─── Stars ─── */
@@ -31,6 +32,15 @@ export default function SpaceCanvas({ warpMode = false, onWarpDone, style }) {
     const farStars  = mkStars(220, 0.3, 0.7,  0.1,  0.4)
     const midStars  = mkStars(110, 0.7, 1.3,  0.28, 0.6)
     const nearStars = mkStars(45,  1.3, 2.2,  0.5,  0.9)
+    const dustClouds = Array.from({ length: 16 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 40 + Math.random() * 120,
+      alpha: 0.02 + Math.random() * 0.035,
+      hue: [210, 235, 260, 165][Math.floor(Math.random() * 4)],
+      drift: 0.2 + Math.random() * 0.4,
+      offset: Math.random() * Math.PI * 2,
+    }))
 
     /* ─── Saturn ─── */
     const saturn = {
@@ -131,6 +141,74 @@ export default function SpaceCanvas({ warpMode = false, onWarpDone, style }) {
       grad.addColorStop(1,   `rgba(${r_i},${g_i},${b_i},0)`)
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, W, H)
+    }
+
+    function drawAuroraBand(now, opts) {
+      const {
+        yBase,
+        amplitude,
+        thickness,
+        speed,
+        hueA,
+        hueB,
+        alpha,
+        phase,
+      } = opts
+      const grad = ctx.createLinearGradient(0, yBase - thickness, 0, yBase + thickness)
+      grad.addColorStop(0, `hsla(${hueA}, 85%, 62%, 0)`)
+      grad.addColorStop(0.5, `hsla(${hueB}, 85%, 68%, ${alpha})`)
+      grad.addColorStop(1, `hsla(${hueA}, 85%, 62%, 0)`)
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(-40, H + 40)
+      for (let x = -40; x <= W + 40; x += 18) {
+        const wave = Math.sin(x * 0.006 + now * speed + phase) * amplitude
+        const wave2 = Math.cos(x * 0.0035 + now * speed * 0.65 + phase * 1.7) * amplitude * 0.45
+        ctx.lineTo(x, yBase + wave + wave2)
+      }
+      ctx.lineTo(W + 40, H + 40)
+      ctx.closePath()
+      ctx.fillStyle = grad
+      ctx.globalCompositeOperation = 'screen'
+      ctx.filter = 'blur(22px)'
+      ctx.fill()
+      ctx.restore()
+      ctx.filter = 'none'
+      ctx.globalCompositeOperation = 'source-over'
+    }
+
+    function drawDustField(now) {
+      dustClouds.forEach(cloud => {
+        const x = cloud.x + Math.sin(now * 0.00018 * cloud.drift + cloud.offset) * 18
+        const y = cloud.y + Math.cos(now * 0.00012 * cloud.drift + cloud.offset * 1.4) * 12
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, cloud.r)
+        grad.addColorStop(0, `hsla(${cloud.hue}, 70%, 70%, ${cloud.alpha})`)
+        grad.addColorStop(0.45, `hsla(${cloud.hue}, 65%, 55%, ${cloud.alpha * 0.45})`)
+        grad.addColorStop(1, `hsla(${cloud.hue}, 65%, 45%, 0)`)
+        ctx.fillStyle = grad
+        ctx.fillRect(x - cloud.r, y - cloud.r, cloud.r * 2, cloud.r * 2)
+      })
+    }
+
+    function drawVignette() {
+      const grad = ctx.createRadialGradient(W * 0.5, H * 0.48, Math.min(W, H) * 0.12, W * 0.5, H * 0.5, Math.max(W, H) * 0.72)
+      grad.addColorStop(0, 'rgba(0,0,0,0)')
+      grad.addColorStop(0.7, 'rgba(3,2,12,0.18)')
+      grad.addColorStop(1, 'rgba(1,1,8,0.56)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, W, H)
+    }
+
+    function resize() {
+      W = window.innerWidth
+      H = window.innerHeight
+      DPR = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = W * DPR
+      canvas.height = H * DPR
+      canvas.style.width = `${W}px`
+      canvas.style.height = `${H}px`
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0)
     }
 
     function drawSaturn() {
@@ -359,21 +437,59 @@ export default function SpaceCanvas({ warpMode = false, onWarpDone, style }) {
         return
       }
 
+      const mxNorm = mouseRef.current.x > -1000 ? mouseRef.current.x / W : 0.5
+      const myNorm = mouseRef.current.y > -1000 ? mouseRef.current.y / H : 0.5
+
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H)
+      skyGrad.addColorStop(0, '#040312')
+      skyGrad.addColorStop(0.38, '#07051a')
+      skyGrad.addColorStop(0.72, '#040212')
+      skyGrad.addColorStop(1, '#02010a')
+      ctx.fillStyle = skyGrad
+      ctx.fillRect(0, 0, W, H)
+
+      drawAuroraBand(now, {
+        yBase: H * 0.22 + myNorm * 16,
+        amplitude: 18,
+        thickness: 90,
+        speed: 0.0012,
+        hueA: 250,
+        hueB: 215,
+        alpha: 0.08,
+        phase: 0.3,
+      })
+      drawAuroraBand(now, {
+        yBase: H * 0.74 - myNorm * 12,
+        amplitude: 24,
+        thickness: 110,
+        speed: 0.0009,
+        hueA: 178,
+        hueB: 250,
+        alpha: 0.06,
+        phase: 1.7,
+      })
+
       drawNebula(W*0.15, H*0.3,  W*0.38, 83,  74,  183, 0.07)
       drawNebula(W*0.8,  H*0.58, W*0.32, 24,  95,  165, 0.055)
       drawNebula(W*0.45, H*0.82, W*0.28, 29,  158, 117, 0.045)
+      drawNebula(W*(0.25 + mxNorm * 0.04), H*0.16, W*0.22, 110, 120, 255, 0.04)
+      drawDustField(now)
 
       ;[farStars, midStars].forEach(layer => {
         layer.forEach(s => {
           s.tw += s.twSpd
-          drawStarDot(s.x, s.y, s.sz, s.baseOp*(0.65+0.35*Math.sin(s.tw)))
+          const driftX = mouseRef.current.x > -1000 ? (mxNorm - 0.5) * (layer === farStars ? -8 : -15) : 0
+          const driftY = mouseRef.current.y > -1000 ? (myNorm - 0.5) * (layer === farStars ? -5 : -9) : 0
+          drawStarDot(s.x + driftX, s.y + driftY, s.sz, s.baseOp*(0.65+0.35*Math.sin(s.tw)))
         })
       })
       nearStars.forEach(s => {
         s.tw += s.twSpd
         const d = Math.hypot(s.x - mouseRef.current.x, s.y - mouseRef.current.y)
         const boost = d < 90 ? 1 + (1 - d/90)*1.5 : 1
-        drawStarDot(s.x, s.y, s.sz*Math.min(boost,2.2), Math.min(1, s.baseOp*(0.65+0.35*Math.sin(s.tw))*boost))
+        const driftX = mouseRef.current.x > -1000 ? (mxNorm - 0.5) * -26 : 0
+        const driftY = mouseRef.current.y > -1000 ? (myNorm - 0.5) * -16 : 0
+        drawStarDot(s.x + driftX, s.y + driftY, s.sz*Math.min(boost,2.2), Math.min(1, s.baseOp*(0.65+0.35*Math.sin(s.tw))*boost))
       })
 
       saturn.driftT += 0.00045
@@ -461,18 +577,24 @@ export default function SpaceCanvas({ warpMode = false, onWarpDone, style }) {
         }
       }
 
+      drawVignette()
+
       raf = requestAnimationFrame(frame)
     }
+    resize()
     raf = requestAnimationFrame(frame)
 
     function onMove(e) { mouseRef.current = { x: e.clientX, y: e.clientY } }
     function onClick(e) { spawnSurprise(e.clientX, e.clientY) }
+    function onResize() { resize() }
     window.addEventListener('mousemove', onMove)
+    window.addEventListener('resize', onResize)
     canvas.addEventListener('click', onClick)
 
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('resize', onResize)
       canvas.removeEventListener('click', onClick)
     }
   }, [warpMode])

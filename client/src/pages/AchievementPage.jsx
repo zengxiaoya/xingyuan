@@ -14,6 +14,7 @@ export default function AchievementPage() {
   const completedLevels = badges.length
   const totalScientists = 13
   const unlockedScientists = scientists.length
+  const completionPercent = Math.round((completedLevels / totalLevels) * 100)
 
   return (
     <div className="page-container">
@@ -23,28 +24,65 @@ export default function AchievementPage() {
           ← 返回星图
         </button>
 
-        <h1 style={{
-          fontFamily: 'var(--font-english)',
-          fontSize: '1.4rem',
-          textAlign: 'center',
-          marginBottom: '0.5rem',
-          color: 'var(--purple-300)'
-        }}>
-          ACHIEVEMENTS
-        </h1>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          {user?.name} 的探索成就
-        </p>
+        <div className="glass-panel fade-in" style={{ padding: '1.5rem', marginBottom: '1.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <div className="cosmic-chip" style={{ marginBottom: '0.8rem' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--teal-400)', boxShadow: '0 0 10px rgba(29,158,117,.5)' }} />
+                探索档案已同步
+              </div>
+              <h1 style={{
+                fontFamily: 'var(--font-english)',
+                fontSize: '1.5rem',
+                marginBottom: '0.4rem',
+                color: 'var(--purple-300)',
+                letterSpacing: '0.06em'
+              }}>
+                ACHIEVEMENTS
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', maxWidth: '420px' }}>
+                {user?.name} 的宇宙探索旅程正在持续发光，已经完成 {completedLevels} 个关卡，整体进度达到 {completionPercent}%。
+              </p>
+            </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-          <div className="card" style={{ textAlign: 'center' }}>
+            <div style={{
+              minWidth: '150px',
+              padding: '0.9rem 1rem',
+              borderRadius: '18px',
+              background: 'linear-gradient(145deg, rgba(127,119,221,.16), rgba(79,195,247,.08))',
+              border: '1px solid rgba(127,119,221,.25)',
+              boxShadow: '0 14px 30px rgba(10,8,35,.32)',
+            }}>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>当前称号</div>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                {completedLevels === totalLevels ? '星渊毕业生' : completedLevels >= 6 ? '深空探险家' : completedLevels >= 3 ? '轨道观察员' : '启程新船员'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--purple-300)' }}>
+                {stars} 星分已点亮
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '1.15rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.45rem', fontSize: '0.8rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>结业进度</span>
+              <span style={{ color: 'var(--purple-300)', fontFamily: 'var(--font-english)' }}>{completionPercent}%</span>
+            </div>
+            <div className="progress-strip">
+              <span style={{ width: `${completionPercent}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          <div className="card stat-card fade-in" style={{ textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
               <Icon name="star" size={32} color="#EF9F27" />
             </div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--amber)', fontFamily: 'var(--font-english)' }}>{stars}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>总星分</div>
           </div>
-          <div className="card" style={{ textAlign: 'center' }}>
+          <div className="card stat-card fade-in" style={{ textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
               <Icon name="trophy" size={32} color="var(--teal-400)" />
             </div>
@@ -53,7 +91,7 @@ export default function AchievementPage() {
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>关卡通关</div>
           </div>
-          <div className="card" style={{ textAlign: 'center' }}>
+          <div className="card stat-card fade-in" style={{ textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
               <Icon name="telescope" size={32} color="var(--blue-400)" />
             </div>
@@ -64,10 +102,15 @@ export default function AchievementPage() {
           </div>
         </div>
 
-        <div className="card">
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-            关卡徽章
-          </h2>
+        <div className="card fade-in">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              关卡徽章
+            </h2>
+            <div className="cosmic-chip">
+              已解锁科学家 {unlockedScientists}/{totalScientists}
+            </div>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {LEVEL_ORDER.map((levelId) => {
               const level = LEVELS[levelId]

@@ -220,6 +220,9 @@ export default function NovaDialog() {
           justify-content: flex-end;
           padding: 1.5rem;
           pointer-events: none;
+          background: radial-gradient(circle at 100% 100%, rgba(127,119,221,.12), transparent 30%), rgba(3,1,14,.36);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
         .nova-dialog {
           pointer-events: all;
@@ -232,6 +235,15 @@ export default function NovaDialog() {
           gap: 0;
           padding: 0;
           overflow: hidden;
+          background:
+            radial-gradient(circle at top right, rgba(127,119,221,.12), transparent 34%),
+            linear-gradient(180deg, rgba(18,12,40,.96), rgba(8,5,22,.96));
+          box-shadow: 0 24px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(127,119,221,.12);
+          animation: novaSlideIn .35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes novaSlideIn {
+          from { opacity: 0; transform: translateY(24px) scale(.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .nova-header {
           display: flex;
@@ -240,6 +252,7 @@ export default function NovaDialog() {
           padding: 1rem 1.25rem;
           border-bottom: 1px solid var(--card-border);
           flex-shrink: 0;
+          background: linear-gradient(180deg, rgba(127,119,221,.08), rgba(127,119,221,0));
         }
         .nova-avatar {
           width: 44px;
@@ -278,10 +291,12 @@ export default function NovaDialog() {
           font-size: 0.875rem;
           line-height: 1.6;
           word-break: break-word;
+          box-shadow: 0 10px 20px rgba(7, 4, 28, 0.22);
+          animation: fadeIn .25s ease;
         }
         .nova-msg-nova .nova-msg-bubble {
-          background: rgba(127, 119, 221, 0.15);
-          border: 1px solid rgba(127, 119, 221, 0.2);
+          background: linear-gradient(180deg, rgba(127, 119, 221, 0.18), rgba(127, 119, 221, 0.1));
+          border: 1px solid rgba(127, 119, 221, 0.22);
           color: var(--text-primary);
           border-bottom-left-radius: 4px;
         }
@@ -316,6 +331,7 @@ export default function NovaDialog() {
           padding: 0.5rem 1.25rem;
           border-top: 1px solid var(--card-border);
           flex-shrink: 0;
+          background: rgba(10, 7, 28, 0.45);
         }
         .nova-input-row {
           display: flex;
@@ -323,20 +339,23 @@ export default function NovaDialog() {
           padding: 0.75rem 1.25rem;
           border-top: 1px solid var(--card-border);
           flex-shrink: 0;
+          background: rgba(7, 4, 22, 0.65);
         }
         .nova-input {
           flex: 1;
           padding: 0.6rem 1rem;
-          background: rgba(127, 119, 221, 0.08);
+          background: rgba(127, 119, 221, 0.1);
           border: 1px solid var(--card-border);
           border-radius: 50px;
           color: var(--text-primary);
           font-size: 0.875rem;
           outline: none;
-          transition: border-color var(--transition);
+          transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
         }
         .nova-input:focus {
           border-color: var(--purple-400);
+          box-shadow: 0 0 0 4px rgba(127, 119, 221, 0.12);
+          background: rgba(127, 119, 221, 0.14);
         }
         .nova-input::placeholder {
           color: var(--text-muted);

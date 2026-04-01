@@ -3,20 +3,30 @@ import db from '../db/index.js'
 
 const router = Router()
 
-// 同步用户信息（登录时调用）
+// 同步用户信息（登录/注册成功后调用）
 router.post('/user', (req, res) => {
   const { name, school, grade, class_name, avatar } = req.body
   if (!name) return res.status(400).json({ error: '缺少用户名' })
   try {
-    const row = db.prepare(`
-      INSERT INTO users (name, school, grade, class_name, avatar)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(name, school, grade, class_name) DO UPDATE SET
-        avatar     = excluded.avatar,
-        updated_at = datetime('now', 'localtime')
-      RETURNING id
-    `).get(name, school || '', grade || '', class_name || '', avatar || '🚀')
-    res.json({ userId: row.id })
+    const user = db.prepare(`
+      SELECT id
+      FROM users
+      WHERE name = ? AND school = ? AND grade = ? AND class_name = ?
+    `).get(name, school || '', grade || '', class_name || '')
+
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在，请先完成注册或登录' })
+    }
+
+    db.prepare(`
+      UPDATE users
+      SET avatar = ?, updated_at = datetime('now', 'localtime')
+      WHERE id = ?
+    `).run(avatar || '🚀', user.id)
+
+    db.prepare(`INSERT OR IGNORE INTO progress (user_id) VALUES (?)`).run(user.id)
+
+    res.json({ userId: user.id })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }

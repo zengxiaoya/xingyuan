@@ -29,6 +29,16 @@ const EDGES = [
   ['solar_lv3','explore_lv3'], ['explore_lv3','universe_lv3'],
 ]
 
+// Same-theme unlock chain (mirrors progressStore PREREQ)
+const PREREQ = {
+  solar_lv2:    'solar_lv1',
+  explore_lv2:  'explore_lv1',
+  universe_lv2: 'universe_lv1',
+  solar_lv3:    'solar_lv2',
+  explore_lv3:  'explore_lv2',
+  universe_lv3: 'universe_lv2',
+}
+
 // Theme color palette
 const THEME = {
   solar:    { base:'#4fc3f7', glow:'rgba(79,195,247,', dark:'#0d3a52' },
@@ -41,9 +51,10 @@ export default function StarMapPage() {
   const user       = useUserStore(s => s.user)
   const { stars, isLevelUnlocked, isLevelCompleted } = useProgressStore()
   const openNova   = useNovaStore(s => s.openNova)
-  const canvasRef   = useRef()
-  const mapRef      = useRef()
-  const planetImgs  = useRef({})
+  const canvasRef        = useRef()
+  const mapRef           = useRef()
+  const planetImgs       = useRef({})
+  const hoveredNodeIdRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600)
 
@@ -192,6 +203,29 @@ export default function StarMapPage() {
         }
       })
 
+      // ── Prerequisite guide edge (hover locked node)
+      const hovId = hoveredNodeIdRef.current
+      const hovNode = hovId ? NODES.find(n => n.id === hovId) : null
+      const hovState = hovNode ? getState(hovId) : null
+      const prereqId = hovState === 'locked' ? PREREQ[hovId] : null
+      const prereqNode = prereqId ? NODES.find(n => n.id === prereqId) : null
+      if (hovNode && prereqNode) {
+        const pa = getPos(hovNode), pb = getPos(prereqNode)
+        // Dashed amber line from prereq → locked
+        ctx.beginPath(); ctx.moveTo(pb.x, pb.y); ctx.lineTo(pa.x, pa.y)
+        ctx.setLineDash([5, 5])
+        ctx.strokeStyle = 'rgba(255,200,60,0.55)'; ctx.lineWidth = 1.5; ctx.stroke()
+        ctx.setLineDash([])
+        // Arrow tip at locked node
+        const angle = Math.atan2(pa.y - pb.y, pa.x - pb.x)
+        ctx.beginPath()
+        ctx.moveTo(pa.x, pa.y)
+        ctx.lineTo(pa.x - 10 * Math.cos(angle - 0.4), pa.y - 10 * Math.sin(angle - 0.4))
+        ctx.lineTo(pa.x - 10 * Math.cos(angle + 0.4), pa.y - 10 * Math.sin(angle + 0.4))
+        ctx.closePath()
+        ctx.fillStyle = 'rgba(255,200,60,0.55)'; ctx.fill()
+      }
+
       // ── Nodes
       const scale = Math.min(1, W / 420)
       NODES.forEach(n => {
@@ -317,6 +351,19 @@ export default function StarMapPage() {
         ctx.fillText('Lv' + n.lv, x, y - r - 4)
       })
 
+      // ── Prerequisite amber glow ring (drawn after nodes so it appears on top)
+      if (prereqNode) {
+        const pp = getPos(prereqNode)
+        const prereqR = (getState(prereqId) === 'done' ? 23 : 24) * scale
+        const pulse = 0.25 + 0.18 * Math.sin(t * 2.5)
+        const ring1 = prereqR + 14 + 6 * Math.sin(t * 2)
+        const ring2 = prereqR + 26 + 8 * Math.sin(t * 1.6 + 1)
+        ctx.beginPath(); ctx.arc(pp.x, pp.y, ring1, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(255,200,60,${pulse})`; ctx.lineWidth = 2; ctx.stroke()
+        ctx.beginPath(); ctx.arc(pp.x, pp.y, ring2, 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(255,200,60,${pulse * 0.4})`; ctx.lineWidth = 1; ctx.stroke()
+      }
+
       raf = requestAnimationFrame(draw)
     }
 
@@ -337,6 +384,7 @@ export default function StarMapPage() {
       const rect = canvas.getBoundingClientRect()
       const mx = e.clientX - rect.left, my = e.clientY - rect.top
       const found = getNodeAt(mx, my)
+      hoveredNodeIdRef.current = found ? found.id : null
       if (found) {
         const state = getState(found.id)
         canvas.style.cursor = state === 'locked' ? 'default' : 'pointer'
@@ -346,6 +394,7 @@ export default function StarMapPage() {
           y: e.clientY - rect2.top - 20,
           node: found, state,
           levelData: LEVELS[found.id],
+          prereqTitle: state === 'locked' && PREREQ[found.id] ? LEVELS[PREREQ[found.id]]?.title : null,
         })
       } else {
         canvas.style.cursor = 'default'
@@ -370,12 +419,16 @@ export default function StarMapPage() {
       const rect = canvas.getBoundingClientRect()
       const mx = touch.clientX - rect.left, my = touch.clientY - rect.top
       touchStartNode = getNodeAt(mx, my)
+      hoveredNodeIdRef.current = touchStartNode ? touchStartNode.id : null
       if (touchStartNode) {
         const state = getState(touchStartNode.id)
         const areaRect = area.getBoundingClientRect()
         const tipX = Math.min(touch.clientX - areaRect.left + 14, areaRect.width - 180)
         const tipY = Math.max(touch.clientY - areaRect.top - 90, 10)
-        setTooltip({ x: tipX, y: tipY, node: touchStartNode, state, levelData: LEVELS[touchStartNode.id] })
+        setTooltip({
+          x: tipX, y: tipY, node: touchStartNode, state, levelData: LEVELS[touchStartNode.id],
+          prereqTitle: state === 'locked' && PREREQ[touchStartNode.id] ? LEVELS[PREREQ[touchStartNode.id]]?.title : null,
+        })
       } else {
         setTooltip(null)
       }
@@ -386,13 +439,14 @@ export default function StarMapPage() {
           navigate(`/level/${touchStartNode.id}`)
         }
         touchStartNode = null
+        hoveredNodeIdRef.current = null
       }
     }
 
     const ro = new ResizeObserver(resize)
     ro.observe(area)
     canvas.addEventListener('mousemove', onMove)
-    canvas.addEventListener('mouseleave', () => setTooltip(null))
+    canvas.addEventListener('mouseleave', () => { hoveredNodeIdRef.current = null; setTooltip(null) })
     canvas.addEventListener('click', onClick)
     canvas.addEventListener('touchstart', onTouchStart, { passive: false })
     canvas.addEventListener('touchend', onTouchEnd)
@@ -506,6 +560,26 @@ export default function StarMapPage() {
       <div ref={mapRef} style={{ flex: 1, position: 'relative', minHeight: '0' }}>
         <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%', position: 'relative', zIndex: 1 }}/>
 
+        <div className="glass-panel fade-in" style={{
+          position: 'absolute',
+          top: isMobile ? '12px' : '18px',
+          left: isMobile ? '12px' : '18px',
+          zIndex: 22,
+          width: isMobile ? 'calc(100% - 24px)' : '320px',
+          padding: isMobile ? '0.9rem 1rem' : '1rem 1.1rem',
+          background: 'linear-gradient(160deg, rgba(12,8,34,.9), rgba(7,5,20,.78))',
+        }}>
+          <div className="cosmic-chip" style={{ marginBottom: '0.7rem' }}>
+            当前任务
+          </div>
+          <div style={{ fontSize: isMobile ? '0.9rem' : '0.98rem', fontWeight: 700, marginBottom: '0.3rem', color: '#EEEDFE' }}>
+            {completedCount === NODES.length ? '所有星球已点亮，准备领取证书' : '选择一颗发光的星球，继续你的宇宙旅程'}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'rgba(175,169,236,.82)', lineHeight: 1.65 }}>
+            已完成 {completedCount}/{NODES.length} 个关卡。锁住的星球会用金色引导线提示下一步目标。
+          </div>
+        </div>
+
         {/* Tooltip */}
         {tooltip && (
           <div style={{
@@ -544,6 +618,14 @@ export default function StarMapPage() {
             }}>
               {tooltip.state === 'done' ? '✓ 已通关' : tooltip.state === 'active' ? '▶ 可挑战' : '🔒 未解锁'}
             </div>
+            {tooltip.prereqTitle && (
+              <div style={{
+                marginTop: '6px', fontSize: '10px', lineHeight: 1.5,
+                color: 'rgba(255,200,60,0.85)',
+              }}>
+                ⭕ 先完成「{tooltip.prereqTitle}」
+              </div>
+            )}
           </div>
         )}
 
@@ -568,16 +650,17 @@ export default function StarMapPage() {
         <div style={{ position: 'absolute', bottom: isMobile ? '14px' : '20px', right: isMobile ? '14px' : '20px', zIndex: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <button
             onClick={() => openNova({ type: 'general' })}
+            className="orbit-button"
             style={{
               width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: '50%',
-              background: 'rgba(127,119,221,.18)',
+              background: 'linear-gradient(145deg, rgba(127,119,221,.3), rgba(55,138,221,.18))',
               border: '1.5px solid #7F77DD',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', transition: 'all .3s',
-              boxShadow: '0 0 20px rgba(127,119,221,.3)',
+              boxShadow: '0 12px 26px rgba(20, 10, 50, .35), 0 0 20px rgba(127,119,221,.3)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(127,119,221,.35)'; e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(127,119,221,.5)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(127,119,221,.18)'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(127,119,221,.3)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(145deg, rgba(127,119,221,.42), rgba(55,138,221,.28))'; e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(127,119,221,.5)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(145deg, rgba(127,119,221,.3), rgba(55,138,221,.18))'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 12px 26px rgba(20, 10, 50, .35), 0 0 20px rgba(127,119,221,.3)' }}
           >
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="#7F77DD" strokeWidth="1"/>

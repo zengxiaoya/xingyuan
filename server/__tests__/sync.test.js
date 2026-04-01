@@ -92,3 +92,39 @@ describe('POST /api/sync/progress', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('POST /api/sync/user', () => {
+  it('updates avatar for known user', async () => {
+    const res = await request(app).post('/api/sync/user').send({
+      name: TEST_USER.name,
+      school: TEST_USER.school,
+      grade: TEST_USER.grade,
+      class_name: TEST_USER.class_name,
+      avatar: '🛰️',
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBeUndefined()
+    expect(res.body.userId).toBeDefined()
+
+    const login = await request(app).post('/api/auth/login').send({
+      name: TEST_USER.name,
+      school: TEST_USER.school,
+      grade: TEST_USER.grade,
+      class_name: TEST_USER.class_name,
+      pin: TEST_USER.pin,
+    })
+    expect(login.status).toBe(200)
+    expect(login.body.user.avatar).toBe('🛰️')
+  })
+
+  it('rejects unknown user instead of auto-creating account', async () => {
+    const res = await request(app).post('/api/sync/user').send({
+      name: '陌生同学',
+      school: '星渊小学',
+      grade: '一年级',
+      class_name: '2班',
+      avatar: '🚀',
+    })
+    expect(res.status).toBe(404)
+  })
+})

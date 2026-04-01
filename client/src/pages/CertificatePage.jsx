@@ -72,6 +72,7 @@ export default function CertificatePage() {
   const [lang, setLang] = useState('cn')
   const [generating, setGenerating] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [shareModal, setShareModal] = useState(null) // { dataUrl, canNativeShare }
 
   const completedLevels = badges.length
   const isGraduated = completedLevels === TOTAL_LEVELS
@@ -92,23 +93,54 @@ export default function CertificatePage() {
       .finally(() => setGenerating(false))
   }, [isGraduated, novaEvaluation, user?.name, user?.school, user?.grade, user?.class_name])
 
+  async function buildCanvas() {
+    return html2canvas(certRef.current, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#08051a',
+      logging: false,
+      imageTimeout: 0,
+    })
+  }
+
   async function handleDownload() {
     if (!certRef.current || downloading) return
     setDownloading(true)
     try {
-      const canvas = await html2canvas(certRef.current, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: '#08051a',
-        logging: false,
-        imageTimeout: 0,
-      })
+      const canvas = await buildCanvas()
       const link = document.createElement('a')
       link.download = `星渊证书_${user?.name || 'certificate'}_${lang.toUpperCase()}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
     } catch (e) {
       console.error('下载失败', e)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  async function handleShare() {
+    if (!certRef.current) return
+    setDownloading(true)
+    try {
+      const canvas = await buildCanvas()
+      const dataUrl = canvas.toDataURL('image/png')
+
+      // Check if Web Share API supports file sharing (mobile browsers)
+      let canNativeShare = false
+      if (navigator.share && navigator.canShare) {
+        const blob = await (await fetch(dataUrl)).blob()
+        const file = new File([blob], `星渊证书_${user?.name || 'certificate'}.png`, { type: 'image/png' })
+        canNativeShare = navigator.canShare({ files: [file] })
+        if (canNativeShare) {
+          await navigator.share({ files: [file], title: '星渊宇宙学院证书' })
+          return
+        }
+      }
+
+      setShareModal({ dataUrl, canNativeShare: false })
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error('分享失败', e)
     } finally {
       setDownloading(false)
     }
@@ -172,6 +204,11 @@ export default function CertificatePage() {
               className="btn-primary"
               style={{ fontSize:'0.82rem', display:'flex', alignItems:'center', gap:'0.35rem' }}>
               {downloading ? '生成中...' : '⬇ 下载证书'}
+            </button>
+            <button onClick={handleShare} disabled={downloading}
+              className="btn-secondary"
+              style={{ fontSize:'0.82rem' }}>
+              {downloading ? '生成中...' : '📤 分享'}
             </button>
             <button onClick={() => window.print()}
               className="btn-secondary"
@@ -422,6 +459,59 @@ export default function CertificatePage() {
           <button className="btn-secondary" onClick={() => navigate('/map')}>返回星图</button>
         </div>
       </div>
+
+      {/* ── Share modal ─────────────────────────────────────────────────── */}
+      {shareModal && (
+        <div
+          onClick={() => setShareModal(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.88)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '1.5rem',
+            gap: '1.25rem',
+          }}
+        >
+          {/* Image preview */}
+          <img
+            src={shareModal.dataUrl}
+            alt="证书预览"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '100%', maxHeight: '70vh',
+              borderRadius: '4px',
+              boxShadow: '0 0 48px rgba(201,168,76,0.25)',
+            }}
+          />
+
+          {/* Instruction */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              textAlign: 'center',
+              color: '#AFA9EC',
+              lineHeight: 1.8,
+              fontSize: '0.9rem',
+            }}
+          >
+            <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+              📱 长按图片保存到相册
+            </p>
+            <p style={{ color: '#6b66b0', fontSize: '0.8rem' }}>
+              打开微信 → 发现 → 朋友圈 → 从相册选择图片
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShareModal(null)}
+            className="btn-ghost"
+            style={{ fontSize: '0.85rem' }}
+          >
+            关闭
+          </button>
+        </div>
+      )}
     </div>
   )
 }

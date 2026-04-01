@@ -30,8 +30,11 @@ app.use(cors({
       'http://127.0.0.1:5173',
       'http://127.0.0.1:3000',
       'http://150.158.11.197',
+      'https://150.158.11.197',
       'https://starvene.club',
+      'http://starvene.club',
       'https://www.starvene.club',
+      'http://www.starvene.club',
     ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

@@ -71,15 +71,20 @@ export const useProgressStore = create(
           stars: state.stars + n
         })),
 
-      saveCreativeAnswer: (levelId, answer) =>
+      saveCreativeAnswer: (levelId, answer) => {
         set((state) => ({
           creativeAnswers: {
             ...state.creativeAnswers,
             [levelId]: answer
           }
-        })),
+        }))
+        syncProgress(get())
+      },
 
-      setNovaEvaluation: (text) => set({ novaEvaluation: text }),
+      setNovaEvaluation: (text) => {
+        set({ novaEvaluation: text })
+        syncProgress(get())
+      },
 
       // 登录找回进度时，用数据库数据覆盖本地 localStorage
       restoreFromDB: (data) => set({

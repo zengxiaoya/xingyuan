@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/levels.js'
 import { SCIENTISTS } from '../data/scientists.js'
