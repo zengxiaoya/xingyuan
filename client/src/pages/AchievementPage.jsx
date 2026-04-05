@@ -1,14 +1,25 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProgressStore } from '../store/progressStore.js'
 import { useUserStore } from '../store/userStore.js'
 import { LEVELS, LEVEL_ORDER } from '../data/levels.js'
 import Icon from '../components/Icon.jsx'
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 600)
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return isMobile
+}
+
 export default function AchievementPage() {
   const navigate = useNavigate()
   const user = useUserStore((state) => state.user)
   const { badges, scientists, stars } = useProgressStore()
+  const m = useIsMobile()
 
   const totalLevels = LEVEL_ORDER.length
   const completedLevels = badges.length
@@ -19,13 +30,13 @@ export default function AchievementPage() {
   return (
     <div className="page-container">
       <div className="stars-bg" />
-      <div style={{ position: 'relative', zIndex: 1, padding: '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: m ? '1rem 0.75rem' : '1.5rem', maxWidth: '700px', margin: '0 auto' }}>
         <button className="btn-ghost" onClick={() => navigate('/map')} style={{ marginBottom: '1rem' }}>
           ← 返回星图
         </button>
 
-        <div className="glass-panel fade-in" style={{ padding: '1.5rem', marginBottom: '1.4rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div className="glass-panel fade-in" style={{ padding: m ? '1rem' : '1.5rem', marginBottom: m ? '1rem' : '1.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: m ? '0.7rem' : '1rem', flexWrap: 'wrap' }}>
             <div>
               <div className="cosmic-chip" style={{ marginBottom: '0.8rem' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--teal-400)', boxShadow: '0 0 10px rgba(29,158,117,.5)' }} />
@@ -46,8 +57,8 @@ export default function AchievementPage() {
             </div>
 
             <div style={{
-              minWidth: '150px',
-              padding: '0.9rem 1rem',
+              minWidth: m ? '120px' : '150px',
+              padding: m ? '0.7rem 0.8rem' : '0.9rem 1rem',
               borderRadius: '18px',
               background: 'linear-gradient(145deg, rgba(127,119,221,.16), rgba(79,195,247,.08))',
               border: '1px solid rgba(127,119,221,.25)',
@@ -74,7 +85,7 @@ export default function AchievementPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${m ? '140px' : '180px'}, 1fr))`, gap: m ? '0.7rem' : '1rem', marginBottom: m ? '1.5rem' : '2rem' }}>
           <div className="card stat-card fade-in" style={{ textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
               <Icon name="star" size={32} color="#EF9F27" />

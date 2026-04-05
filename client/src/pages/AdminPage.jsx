@@ -63,7 +63,7 @@ function DragSlider({ onVerified }) {
   return (
     <div ref={trackRef} style={{
       position: 'relative', height: `${HANDLE_W}px`,
-      background: verified ? 'rgba(29,158,117,.15)' : 'rgba(20,15,50,.8)',
+      background: verified ? 'rgba(29,158,117,.15)' : C.input,
       border: `1px solid ${verified ? 'rgba(29,158,117,.5)' : C.border}`,
       borderRadius: '8px', overflow: 'hidden', userSelect: 'none',
       marginBottom: '12px', cursor: verified ? 'default' : 'pointer',
@@ -80,7 +80,7 @@ function DragSlider({ onVerified }) {
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: '0.8rem',
-        color: verified ? '#1D9E75' : C.muted,
+        color: verified ? C.success : C.muted,
         pointerEvents: 'none', paddingLeft: `${HANDLE_W}px`,
       }}>
         {verified ? '✓ 验证成功' : '向右拖动完成验证'}
@@ -90,7 +90,7 @@ function DragSlider({ onVerified }) {
         style={{
           position: 'absolute', left: `${pos * getTrackW()}px`, top: 0,
           width: `${HANDLE_W}px`, height: `${HANDLE_W}px`,
-          background: verified ? '#1D9E75' : C.accent,
+          background: verified ? C.success : C.accent,
           borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: verified ? 'default' : 'grab', transition: dragging.current ? 'none' : 'left .3s, background .3s',
           boxShadow: '2px 0 8px rgba(0,0,0,.3)',
@@ -109,16 +109,16 @@ const TOKEN_KEY = 'xingyuan_admin_token'
 const API = '/api/admin'
 
 const C = {
-  bg: '#03010e',
-  card: 'rgba(6,3,24,.95)',
-  border: 'rgba(127,119,221,.2)',
-  accent: '#7F77DD',
-  text: '#EEEDFE',
-  muted: 'rgba(175,169,236,.6)',
-  success: '#1D9E75',
-  danger: '#e05555',
-  warn: '#EF9F27',
-  input: 'rgba(20,15,50,.8)',
+  bg: 'var(--bg)',
+  card: 'var(--bg-card)',
+  border: 'var(--card-border)',
+  accent: 'var(--purple-400)',
+  text: 'var(--text-primary)',
+  muted: 'var(--text-secondary)',
+  success: 'var(--teal-400)',
+  danger: 'var(--danger)',
+  warn: 'var(--amber)',
+  input: 'var(--input-bg)',
 }
 
 async function apiFetch(path, method = 'GET', body, token) {
@@ -377,7 +377,7 @@ export default function AdminPage() {
 
       {/* ── Header ── */}
       <div style={{
-        background: 'rgba(6,3,24,.98)', borderBottom: `1px solid ${C.border}`,
+        background: 'var(--bg-elevated)', borderBottom: `1px solid ${C.border}`,
         padding: '0 1.5rem', height: '56px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
@@ -404,7 +404,7 @@ export default function AdminPage() {
       </div>
 
       {/* ── Tab 切换 ── */}
-      <div style={{ background: 'rgba(6,3,24,.95)', borderBottom: `1px solid ${C.border}`, padding: '0 1.5rem' }}>
+      <div style={{ background: 'var(--bg-card)', borderBottom: `1px solid ${C.border}`, padding: '0 1.5rem' }}>
         {[['users', '用户管理'], ['stats', '统计分析']].map(([key, label]) => (
           <button key={key} onClick={() => { setActiveTab(key); if (key === 'stats' && !stats) fetchStats() }}
             style={{
@@ -443,8 +443,8 @@ export default function AdminPage() {
             <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.border}` }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
-                  <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid ${C.border}` }}>
-                    {['头像', '姓名', '学校', '年级', '班级', '⭐ 星星', '通关进度', '科学家', '创意答案', '注册时间', '最后活跃', '操作'].map(h => (
+                    <tr style={{ background: 'rgba(127,119,221,.07)', borderBottom: `1px solid var(--card-border)` }}>
+                      {['头像', '姓名', '学校', '年级', '班级', '⭐ 星星', '通关进度', '科学家', '创意答案', '注册时间', '最后活跃', '操作'].map(h => (
                       <th key={h} style={{ padding: '12px 14px', textAlign: 'left', color: C.muted, fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.78rem' }}>{h}</th>
                     ))}
                   </tr>
@@ -457,7 +457,7 @@ export default function AdminPage() {
                   )}
                   {filtered.map((u, i) => (
                     <tr key={u.id}
-                      style={{ borderBottom: i < filtered.length - 1 ? `1px solid rgba(127,119,221,.07)` : 'none', transition: 'background .15s' }}
+                      style={{ borderBottom: i < filtered.length - 1 ? '1px solid rgba(127,119,221,.07)' : 'none', transition: 'background .15s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(127,119,221,.04)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
@@ -622,14 +622,14 @@ const inputStyle = {
 }
 
 const overlayStyle = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)',
+  position: 'fixed', inset: 0, background: 'var(--overlay-bg)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
 }
 
 const modalStyle = {
   background: C.card, border: `1px solid ${C.border}`,
   borderRadius: '14px', padding: '1.75rem', width: '90%', maxWidth: '400px',
-  boxShadow: '0 12px 48px rgba(0,0,0,.7)',
+  boxShadow: 'var(--shadow-soft)',
 }
 
 const btnBase = {
@@ -639,14 +639,14 @@ const btnBase = {
 
 const btnSecondary = {
   ...btnBase, background: 'transparent',
-  border: `1px solid rgba(127,119,221,.3)`, color: 'rgba(175,169,236,.8)',
+  border: `1px solid var(--card-border)`, color: 'var(--text-secondary)',
 }
 
 const td = { padding: '11px 14px' }
 
 const actionBtn = {
   padding: '3px 10px', borderRadius: '5px',
-  border: `1px solid rgba(127,119,221,.25)`,
+  border: `1px solid var(--input-border)`,
   background: 'transparent', color: C.accent,
   fontSize: '0.75rem', cursor: 'pointer',
   whiteSpace: 'nowrap',

@@ -1,5 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 600)
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return isMobile
+}
 import { LEVELS } from '../data/levels.js'
 import { SCIENTISTS } from '../data/scientists.js'
 import { PLANET_FACTS } from '../data/planetFacts.js'
@@ -35,6 +45,7 @@ const CHOICE_NEXT    = [PHASES.Q2, PHASES.Q3, PHASES.Q4]
 export default function LevelPage() {
   const { levelId } = useParams()
   const navigate    = useNavigate()
+  const m = useIsMobile()
   const level  = LEVELS[levelId]
   const facts  = PLANET_FACTS[levelId] || []
   const { isLevelUnlocked, completeLevel, isLevelCompleted, saveCreativeAnswer } = useProgressStore()
@@ -353,30 +364,30 @@ export default function LevelPage() {
     return (
       <div className="page-container">
         <div className="stars-bg" />
-        <div style={{ position: 'relative', zIndex: 1, padding: '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
-          <button className="btn-ghost" onClick={() => navigate('/map')} style={{ marginBottom: '1rem' }}>← 返回星图</button>
+        <div style={{ position: 'relative', zIndex: 1, padding: m ? '1rem 0.9rem' : '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
+          <button className="btn-ghost" onClick={() => navigate('/map')} style={{ marginBottom: m ? '0.7rem' : '1rem' }}>← 返回星图</button>
 
-          <div className="card fade-in" style={{ marginBottom: '1.5rem', borderColor: `${level.color}44` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="card fade-in" style={{ marginBottom: m ? '1rem' : '1.5rem', borderColor: `${level.color}44` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: m ? '0.7rem' : '1rem', marginBottom: m ? '0.7rem' : '1rem' }}>
               <div style={{
-                width: '56px', height: '56px', borderRadius: '50%',
+                width: m ? '44px' : '56px', height: m ? '44px' : '56px', borderRadius: '50%',
                 background: `${level.color}22`, border: `2px solid ${level.color}66`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.5rem', color: level.color, fontFamily: 'var(--font-english)', fontWeight: 700
+                fontSize: m ? '1.2rem' : '1.5rem', color: level.color, fontFamily: 'var(--font-english)', fontWeight: 700
               }}>
                 {level.level}
               </div>
               <div>
                 <p style={{ fontSize: '0.75rem', color: level.color, marginBottom: '0.2rem' }}>{level.themeLabel}</p>
-                <h1 style={{ fontSize: '1.4rem', fontWeight: 700 }}>{level.title}</h1>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{level.subtitle}</p>
+                <h1 style={{ fontSize: m ? '1.15rem' : '1.4rem', fontWeight: 700 }}>{level.title}</h1>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{level.subtitle}</p>
               </div>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.8 }}>{level.description}</p>
           </div>
 
-          <div className="card fade-in" style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div className="card fade-in" style={{ marginBottom: m ? '1rem' : '1.5rem' }}>
+            <h2 style={{ fontSize: m ? '0.85rem' : '0.9rem', fontWeight: 600, marginBottom: m ? '0.7rem' : '1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Icon name="star" size={14} color="var(--amber)" /> 宇宙冷知识
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -410,7 +421,7 @@ export default function LevelPage() {
             <button className="btn-primary" style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
               onClick={() => { setLoadError(false); setLearnIndex(0); setPhase(PHASES.LEARN) }}>
               <Icon name="rocket" size={15} color="currentColor" />
-              开始闯关 ({alreadyDone ? '重玩' : '5 道题'})
+              开始闯关 {alreadyDone ? '（重玩）' : ''}
             </button>
             <button className="btn-secondary" style={{ flex: 1, minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
               onClick={() => openNova({ type: 'level', id: levelId })}>
@@ -437,14 +448,14 @@ export default function LevelPage() {
     return (
       <div className="page-container">
         <div className="stars-bg" />
-        <div style={{ position: 'relative', zIndex: 1, padding: '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
+        <div style={{ position: 'relative', zIndex: 1, padding: m ? '1rem 0.9rem' : '1.5rem', maxWidth: '680px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <button className="btn-ghost" onClick={() => setPhase(PHASES.INTRO)}>← 返回</button>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '0.75rem', color: level.color, fontWeight: 600 }}>{level.title}</p>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>知识卡片 {learnIndex + 1} / {knowledge.length}</p>
             </div>
-            <div style={{ width: '60px' }} />
+            <div style={{ width: m ? '48px' : '60px' }} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '1.5rem' }}>
@@ -458,12 +469,12 @@ export default function LevelPage() {
           </div>
 
           <div className="card fade-in" style={{
-            marginBottom: '1.5rem', borderColor: `${level.color}55`,
-            boxShadow: `0 0 30px ${level.color}15`, padding: '2rem 1.5rem', textAlign: 'center',
+            marginBottom: m ? '1rem' : '1.5rem', borderColor: `${level.color}55`,
+            boxShadow: `0 0 30px ${level.color}15`, padding: m ? '1.25rem 1rem' : '2rem 1.5rem', textAlign: 'center',
           }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
               {card.img
-                ? <img src={card.img} alt={card.title} style={{ width: '400px', height: '300px', objectFit: 'cover', borderRadius: '8px', maxWidth: '100%' }} />
+                ? <img src={card.img} alt={card.title} style={{ width: m ? '100%' : '400px', height: m ? 'auto' : '300px', objectFit: 'cover', borderRadius: '8px', maxWidth: '100%' }} />
                 : <div style={{
                     width: '80px', height: '80px', borderRadius: '50%',
                     background: `${level.color}15`, border: `2px solid ${level.color}40`,
@@ -579,11 +590,11 @@ export default function LevelPage() {
         </div>
       )}
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '1rem 1.5rem', maxWidth: '680px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: m ? '0.8rem 0.9rem' : '1rem 1.5rem', maxWidth: '680px', margin: '0 auto' }}>
         {/* 顶部栏 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: m ? '1rem' : '1.5rem' }}>
           <button className="btn-ghost" onClick={() => navigate('/map')}>← 星图</button>
-          <div style={{ fontFamily: 'var(--font-english)', fontSize: '0.9rem', color: level.color, fontWeight: 600 }}>{level.title}</div>
+          <div style={{ fontFamily: 'var(--font-english)', fontSize: m ? '0.8rem' : '0.9rem', color: level.color, fontWeight: 600 }}>{level.title}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--amber)', fontWeight: 600 }}>
             <Icon name="star" size={14} color="#EF9F27" /> {runningStars}
           </div>

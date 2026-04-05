@@ -57,6 +57,7 @@ export default function StarMapPage() {
   const hoveredNodeIdRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600)
+  const [taskPanelOpen, setTaskPanelOpen] = useState(true)
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 600)
@@ -566,11 +567,35 @@ export default function StarMapPage() {
           left: isMobile ? '12px' : '18px',
           zIndex: 22,
           width: isMobile ? 'calc(100% - 24px)' : '320px',
+          maxWidth: taskPanelOpen ? undefined : 'none',
           padding: isMobile ? '0.9rem 1rem' : '1rem 1.1rem',
           background: 'linear-gradient(160deg, rgba(12,8,34,.9), rgba(7,5,20,.78))',
+          display: taskPanelOpen ? 'block' : 'none',
         }}>
-          <div className="cosmic-chip" style={{ marginBottom: '0.7rem' }}>
-            当前任务
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.7rem' }}>
+            <div className="cosmic-chip" style={{ margin: 0 }}>
+              当前任务
+            </div>
+            <button
+              onClick={() => setTaskPanelOpen(false)}
+              style={{
+                background: 'rgba(127,119,221,.15)',
+                border: '1px solid rgba(127,119,221,.25)',
+                borderRadius: '8px',
+                width: '26px',
+                height: '26px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#AFA9EC',
+                fontSize: '14px',
+                padding: 0,
+                lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
           </div>
           <div style={{ fontSize: isMobile ? '0.9rem' : '0.98rem', fontWeight: 700, marginBottom: '0.3rem', color: '#EEEDFE' }}>
             {completedCount === NODES.length ? '所有星球已点亮，准备领取证书' : '选择一颗发光的星球，继续你的宇宙旅程'}
@@ -579,6 +604,39 @@ export default function StarMapPage() {
             已完成 {completedCount}/{NODES.length} 个关卡。锁住的星球会用金色引导线提示下一步目标。
           </div>
         </div>
+
+        {!taskPanelOpen && (
+          <button
+            onClick={() => setTaskPanelOpen(true)}
+            className="fade-in"
+            style={{
+              position: 'absolute',
+              top: isMobile ? '12px' : '18px',
+              left: isMobile ? '12px' : '18px',
+              zIndex: 22,
+              background: 'linear-gradient(160deg, rgba(12,8,34,.92), rgba(7,5,20,.85))',
+              border: '1px solid rgba(127,119,221,.3)',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              color: '#AFA9EC',
+              fontSize: isMobile ? '0.75rem' : '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              backdropFilter: 'blur(16px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: '0 4px 20px rgba(0,0,0,.5)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="3" stroke="#AFA9EC" strokeWidth="1.5"/>
+              <line x1="8" y1="9" x2="16" y2="9" stroke="#AFA9EC" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="8" y1="13" x2="14" y2="13" stroke="#AFA9EC" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            当前任务
+          </button>
+        )}
 
         {/* Tooltip */}
         {tooltip && (

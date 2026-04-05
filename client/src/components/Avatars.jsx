@@ -16,12 +16,12 @@ const BLUSH   = '#f8a090'
 /* ─────────────────────────────────────────────
    小工具：背景 + 星点
 ───────────────────────────────────────────── */
-function BgGrad({ uid, c0, c1 }) {
+function BgGrad({ uid }) {
   return (
     <defs>
       <radialGradient id={`avg_${uid}`} cx="44%" cy="36%" r="62%">
-        <stop offset="0%"   stopColor={c0} />
-        <stop offset="100%" stopColor={c1} />
+        <stop offset="0%"   stopColor="var(--purple-900)" />
+        <stop offset="100%" stopColor="var(--bg)" />
       </radialGradient>
     </defs>
   )
@@ -90,7 +90,7 @@ function Blush() {
 export function AvatarBoy1({ uid = 'b1', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#1d1a58" c1="#06041a" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       <Face shirt="#24208a" />
@@ -120,7 +120,7 @@ export function AvatarBoy1({ uid = 'b1', size = 80 }) {
 export function AvatarBoy2({ uid = 'b2', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#072222" c1="#010d0d" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       <Face shirt="#184848" />
@@ -159,7 +159,7 @@ export function AvatarBoy2({ uid = 'b2', size = 80 }) {
 export function AvatarBoy3({ uid = 'b3', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#100a28" c1="#040210" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       {/* 额外星星 */}
@@ -195,7 +195,7 @@ export function AvatarBoy3({ uid = 'b3', size = 80 }) {
 export function AvatarGirl1({ uid = 'g1', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#1e0840" c1="#080018" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       <Face shirt="#381878" />
@@ -229,7 +229,7 @@ export function AvatarGirl1({ uid = 'g1', size = 80 }) {
 export function AvatarGirl2({ uid = 'g2', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#200820" c1="#090008" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       <Face shirt="#5a1860" />
@@ -275,7 +275,7 @@ export function AvatarGirl2({ uid = 'g2', size = 80 }) {
 export function AvatarGirl3({ uid = 'g3', size = 80 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <BgGrad uid={uid} c0="#080830" c1="#02020e" />
+      <BgGrad uid={uid} />
       <Bg uid={uid} />
       <Stars />
       {/* 多一颗星 */}

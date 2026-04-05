@@ -4,6 +4,16 @@ import { useProgressStore } from '../store/progressStore.js'
 import { SCIENTISTS, SCIENTIST_ORDER } from '../data/scientists.js'
 import Icon from '../components/Icon.jsx'
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 600)
+  React.useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return isMobile
+}
+
 function ScientistAvatar({ scientist }) {
   const [imgError, setImgError] = useState(false)
   if (scientist.image && !imgError) {
@@ -28,18 +38,19 @@ function ScientistAvatar({ scientist }) {
 export default function HallPage() {
   const navigate = useNavigate()
   const { scientists: unlockedIds } = useProgressStore()
+  const m = useIsMobile()
 
   return (
     <div className="page-container">
       <div className="stars-bg" />
-      <div style={{ position: 'relative', zIndex: 1, padding: '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: m ? '1rem 0.75rem' : '1.5rem', maxWidth: '900px', margin: '0 auto' }}>
         <button className="btn-ghost" onClick={() => navigate('/map')} style={{ marginBottom: '1rem' }}>
           ← 返回星图
         </button>
 
         <h1 style={{
           fontFamily: 'var(--font-english)',
-          fontSize: '1.4rem',
+          fontSize: m ? '1.15rem' : '1.4rem',
           textAlign: 'center',
           marginBottom: '0.5rem',
           color: 'var(--purple-300)'
@@ -52,8 +63,8 @@ export default function HallPage() {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: '1rem'
+          gridTemplateColumns: `repeat(auto-fill, minmax(${m ? '140px' : '200px'}, 1fr))`,
+          gap: m ? '0.7rem' : '1rem'
         }}>
           {SCIENTIST_ORDER.map((id) => {
             const scientist = SCIENTISTS[id]

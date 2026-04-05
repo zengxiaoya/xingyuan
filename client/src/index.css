@@ -61,6 +61,8 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 
 body {
@@ -76,6 +78,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 a {
@@ -825,6 +828,36 @@ ol {
   .step-label {
     font-size: 0.65rem;
   }
+
+  /* iOS safe area support */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Better touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text selection on UI elements */
+  button, .btn-primary, .btn-secondary, .btn-ghost, .glass-panel {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Fix iOS input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Better scrolling on iOS */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -899,6 +932,31 @@ ol {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ============================================================
+   响应式 - 小屏手机 (<= 400px)
+   ============================================================ */
+@media (max-width: 400px) {
+  html {
+    font-size: 13px;
+  }
+
+  .card {
+    padding: 0.85rem;
+    border-radius: 12px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.55rem 1.2rem;
+    font-size: 0.85rem;
+  }
+
+  .glass-panel {
+    border-radius: 14px;
+    padding: 0.85rem;
+  }
 }
 
 /* ============================================================

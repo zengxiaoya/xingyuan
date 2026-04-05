@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNovaStore } from '../store/novaStore.js'
 import { useUserStore } from '../store/userStore.js'
 import { streamChat } from '../utils/api.js'
+import { isXfyunConfigured, startRecognition } from '../utils/xfyunIAT.js'
 
 export default function NovaDialog() {
   const {
@@ -18,8 +19,18 @@ export default function NovaDialog() {
 
   const user = useUserStore(s => s.user)
   const [inputValue, setInputValue] = useState('')
+  const [isListening, setIsListening] = useState(false)
+  const [volume, setVolume] = useState(0)
+  const [listenSeconds, setListenSeconds] = useState(0)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+  const voiceCtrlRef = useRef(null)
+  const accumulatedRef = useRef('')
+  const listenTimerRef = useRef(null)
+  const listenStartRef = useRef(null)
+
+  // 只要配置了讯飞凭证 + 浏览器支持 getUserMedia 就显示麦克风
+  const supportsSpeech = typeof window !== 'undefined' && isXfyunConfigured() && !!navigator.mediaDevices?.getUserMedia
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -94,6 +105,73 @@ export default function NovaDialog() {
       handleSend()
     }
   }
+
+  async function toggleVoice() {
+    if (isListening) {
+      voiceCtrlRef.current?.stop()
+      voiceCtrlRef.current = null
+      setIsListening(false)
+      setVolume(0)
+      setListenSeconds(0)
+      clearInterval(listenTimerRef.current)
+      listenStartRef.current = null
+      return
+    }
+
+    accumulatedRef.current = ''
+    setIsListening(true)
+    setVolume(0)
+    setListenSeconds(0)
+    listenStartRef.current = Date.now()
+
+    // 每秒更新录音时长
+    listenTimerRef.current = setInterval(() => {
+      if (listenStartRef.current) {
+        const elapsed = Math.floor((Date.now() - listenStartRef.current) / 1000)
+        setListenSeconds(elapsed)
+        // 超过55秒自动停止
+        if (elapsed >= 55) {
+          voiceCtrlRef.current?.stop()
+          voiceCtrlRef.current = null
+          setIsListening(false)
+          setVolume(0)
+          setListenSeconds(0)
+          clearInterval(listenTimerRef.current)
+          listenStartRef.current = null
+        }
+      }
+    }, 1000)
+
+    const ctrl = await startRecognition({
+      onResult(text) {
+        console.log('语音识别:', text)
+        accumulatedRef.current += text
+        setInputValue(accumulatedRef.current)
+      },
+      onVolume(v) {
+        setVolume(v)
+      },
+      onError(err) {
+        console.warn('语音识别错误:', err)
+        setIsListening(false)
+        setVolume(0)
+        setListenSeconds(0)
+        voiceCtrlRef.current = null
+        clearInterval(listenTimerRef.current)
+        listenStartRef.current = null
+      }
+    })
+
+    voiceCtrlRef.current = ctrl
+  }
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      voiceCtrlRef.current?.stop()
+      clearInterval(listenTimerRef.current)
+    }
+  }, [])
 
   if (!isOpen) return null
 
@@ -188,26 +266,56 @@ export default function NovaDialog() {
           </div>
         )}
 
-        <div className="nova-input-row">
-          <input
-            ref={inputRef}
-            className="nova-input"
-            type="text"
-            placeholder="问问 NOVA..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isThinking}
-          />
-          <button
-            className="btn-primary"
-            style={{ padding: '0.6rem 1.2rem', flexShrink: 0 }}
-            onClick={() => handleSend()}
-            disabled={isThinking || !inputValue.trim()}
-          >
-            发送
-          </button>
-        </div>
+        {isListening ? (
+          /* ===== 录音模式：全宽声波界面 ===== */
+          <div className="nova-voice-panel">
+            <div className="nova-voice-rings" style={{ '--vol': volume, '--warn': listenSeconds >= 50 ? 1 : 0 }}>
+              <span className="ring ring-1" />
+              <span className="ring ring-2" />
+              <span className="ring ring-3" />
+              <span className="ring ring-4" />
+              <button className="nova-voice-stop" onClick={toggleVoice} aria-label="停止录音">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              </button>
+            </div>
+            <span className="nova-voice-timer">{listenSeconds}s / 60s</span>
+            <span className="nova-voice-text">点击停止录音</span>
+          </div>
+        ) : (
+          /* ===== 普通输入模式 ===== */
+          <div className="nova-input-row">
+            <input
+              ref={inputRef}
+              className="nova-input"
+              type="text"
+              placeholder="问问 NOVA..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isThinking}
+            />
+            {supportsSpeech && (
+              <button className="nova-voice-btn" onClick={toggleVoice} aria-label="开始语音输入">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="1" width="6" height="12" rx="3" />
+                  <path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </button>
+            )}
+            <button
+              className="btn-primary"
+              style={{ padding: '0.6rem 1.2rem', flexShrink: 0 }}
+              onClick={() => handleSend()}
+              disabled={isThinking || !inputValue.trim()}
+            >
+              发送
+            </button>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -228,7 +336,7 @@ export default function NovaDialog() {
           pointer-events: all;
           width: 380px;
           max-width: calc(100vw - 2rem);
-          height: 520px;
+          height: 100%;
           max-height: calc(100vh - 3rem);
           display: flex;
           flex-direction: column;
@@ -363,6 +471,98 @@ export default function NovaDialog() {
         .nova-input:disabled {
           opacity: 0.6;
         }
+        @keyframes voicePulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(224, 85, 85, 0.3); }
+          50% { box-shadow: 0 0 0 8px rgba(224, 85, 85, 0); }
+        }
+        .nova-voice-btn {
+          width: 40px; height: 40px; border-radius: 50%;
+          border: 1px solid var(--card-border);
+          background: transparent;
+          color: var(--text-secondary);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; flex-shrink: 0;
+          transition: all var(--transition);
+        }
+        .nova-voice-btn:hover {
+          border-color: #0066FF;
+          color: #0066FF;
+          background: rgba(0, 102, 255, 0.08);
+        }
+        /* 录音面板 */
+        .nova-voice-panel {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          padding: 1.5rem 1.25rem; gap: 0.75rem;
+          border-top: 1px solid var(--card-border);
+          flex-shrink: 0;
+          background: rgba(7, 4, 22, 0.65);
+          position: relative;
+          overflow: hidden;
+        }
+        .nova-voice-rings {
+          position: relative; width: 120px; height: 120px;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .ring {
+          position: absolute; border-radius: 50%;
+          border: 2px solid rgba(0, 102, 255, 0.35);
+          animation: ringExpand 2s ease-out infinite;
+          transition: border-color 0.5s;
+        }
+        .nova-voice-rings[style*="--warn: 1"] .ring {
+          border-color: rgba(251, 191, 36, 0.5);
+        }
+        .ring-1 { width: 48px; height: 48px; animation-delay: 0s; }
+        .ring-2 { width: 48px; height: 48px; animation-delay: 0.4s; }
+        .ring-3 { width: 48px; height: 48px; animation-delay: 0.8s; }
+        .ring-4 { width: 48px; height: 48px; animation-delay: 1.2s; }
+        @keyframes ringExpand {
+          0% { transform: scale(1); opacity: calc(0.15 + var(--vol, 0) * 0.55); border-width: calc(1.5px + var(--vol, 0) * 2px); }
+          100% { transform: scale(calc(2.2 + var(--vol, 0) * 0.8)); opacity: 0; }
+        }
+        .nova-voice-rings[style*="--warn: 1"] .ring {
+          animation-name: ringExpandWarn;
+        }
+        @keyframes ringExpandWarn {
+          0% { transform: scale(1); opacity: 0.6; border-width: 3px; }
+          100% { transform: scale(3); opacity: 0; }
+        }
+        .nova-voice-stop {
+          position: absolute; z-index: 2;
+          width: 52px; height: 52px; border-radius: 50%;
+          border: 2px solid #0066FF;
+          background: rgba(0, 102, 255, 0.12);
+          color: #0066FF;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s;
+          box-shadow: 0 0 20px rgba(0, 102, 255, 0.2);
+        }
+        .nova-voice-stop:hover {
+          background: rgba(0, 102, 255, 0.25);
+          box-shadow: 0 0 30px rgba(0, 102, 255, 0.35);
+        }
+        .nova-voice-rings[style*="--warn: 1"] .nova-voice-stop {
+          border-color: var(--yellow-400);
+          background: rgba(251, 191, 36, 0.15);
+          color: var(--yellow-400);
+          box-shadow: 0 0 25px rgba(251, 191, 36, 0.3);
+          animation: warnPulse 0.8s ease-in-out infinite;
+        }
+        @keyframes warnPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        .nova-voice-timer {
+          font-size: 0.8rem; color: var(--text-muted);
+          font-variant-numeric: tabular-nums;
+        }
+        .nova-voice-rings[style*="--warn: 1"] ~ .nova-voice-timer {
+          color: var(--yellow-400);
+        }
+        .nova-voice-text {
+          font-size: 0.7rem; color: var(--text-muted); opacity: 0.7;
+        }
         @media (max-width: 480px) {
           .nova-overlay {
             padding: 0;
@@ -372,9 +572,19 @@ export default function NovaDialog() {
           .nova-dialog {
             width: 100%;
             max-width: 100%;
-            height: 60vh;
+            height: 100%;
             border-bottom-left-radius: 0;
             border-bottom-right-radius: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+          .nova-input-row {
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+          }
+        }
+        /* iOS keyboard support */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+          .nova-dialog {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
           }
         }
       `}</style>

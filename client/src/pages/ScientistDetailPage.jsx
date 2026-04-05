@@ -1,14 +1,25 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { SCIENTISTS } from '../data/scientists.js'
 import { LEVELS } from '../data/levels.js'
 import Icon from '../components/Icon.jsx'
 import { useNovaStore } from '../store/novaStore.js'
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 600)
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 600)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return isMobile
+}
+
 export default function ScientistDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [imageError, setImageError] = useState(false)
+  const m = useIsMobile()
   
   const { openNova } = useNovaStore()
   const scientist = SCIENTISTS[id]
@@ -31,7 +42,7 @@ export default function ScientistDetailPage() {
   return (
     <div className="page-container">
       <div className="stars-bg" />
-      <div style={{ position: 'relative', zIndex: 1, padding: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ position: 'relative', zIndex: 1, padding: m ? '1rem 0.75rem' : '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
         {/* 返回按钮 */}
         <button 
           className="btn-ghost" 
@@ -48,8 +59,7 @@ export default function ScientistDetailPage() {
           overflow: 'hidden'
         }}>
           {/* 顶部横幅 - 使用科学家主题色 */}
-          <div style={{
-            height: '8rem',
+          <div style={{ height: m ? '5rem' : '8rem',
             background: `linear-gradient(135deg, ${scientist.color}44 0%, ${scientist.color}22 100%)`,
             position: 'relative'
           }}>
@@ -63,15 +73,15 @@ export default function ScientistDetailPage() {
             }} />
           </div>
 
-          <div style={{ padding: '0 2rem 2rem', marginTop: '-5rem' }}>
+          <div style={{ padding: m ? '0 1.2rem 1.5rem' : '0 2rem 2rem', marginTop: m ? '-3.5rem' : '-5rem' }}>
             {/* 头像 */}
             <div style={{
               position: 'relative',
               marginBottom: '1.5rem'
             }}>
               <div style={{
-                width: '160px',
-                height: '160px',
+                width: m ? '110px' : '160px',
+                height: m ? '110px' : '160px',
                 borderRadius: '50%',
                 background: 'rgba(26, 16, 64, 0.9)',
                 border: `4px solid ${scientist.color}`,

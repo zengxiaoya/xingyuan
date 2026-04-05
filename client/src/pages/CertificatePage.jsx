@@ -50,12 +50,12 @@ function OfficialSeal({ size = 94 }) {
         <path id={id} d={`M ${cx - tr} ${cy} A ${tr} ${tr} 0 0 1 ${cx + tr} ${cy}`}/>
       </defs>
       <text fontSize="5.5" fill={GOLD} fontFamily="'Orbitron', monospace" letterSpacing="1.6">
-        <textPath href={`#${id}`} startOffset="50%" textAnchor="middle">XINGYUAN SPACE ACADEMY</textPath>
+        <textPath href={`#${id}`} startOffset="50%" textAnchor="middle">XINGYUAN SPACE CENTER</textPath>
       </text>
       <text x={cx} y={cy + 6} textAnchor="middle" fontSize="20" fill={GOLD}>✦</text>
       <text x={cx} y={cy + 19} textAnchor="middle" fontSize="6.5" fill={GOLD}
         fontFamily="'PingFang SC', 'Microsoft YaHei', sans-serif" letterSpacing="1.5">
-        星渊宇宙学院
+        星渊宇宙中心
       </text>
       <line x1={cx - 18} y1={cy + 25} x2={cx + 18} y2={cy + 25} stroke={GOLD} strokeWidth="0.5" strokeOpacity="0.45"/>
     </svg>
@@ -73,6 +73,7 @@ export default function CertificatePage() {
   const [generating, setGenerating] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [shareModal, setShareModal] = useState(null) // { dataUrl, canNativeShare }
+  const m = typeof window !== 'undefined' && window.innerWidth < 600
 
   const completedLevels = badges.length
   const isGraduated = completedLevels === TOTAL_LEVELS
@@ -133,7 +134,7 @@ export default function CertificatePage() {
         const file = new File([blob], `星渊证书_${user?.name || 'certificate'}.png`, { type: 'image/png' })
         canNativeShare = navigator.canShare({ files: [file] })
         if (canNativeShare) {
-          await navigator.share({ files: [file], title: '星渊宇宙学院证书' })
+          await navigator.share({ files: [file], title: '星渊宇宙中心证书' })
           return
         }
       }
@@ -160,7 +161,7 @@ export default function CertificatePage() {
         : `has successfully completed all ${TOTAL_LEVELS} courses in the Xingyuan Cosmic Exploration Program, unlocking ${badges.length} achievement badges, discovering ${scientists.length} legendary scientists, and earning ${stars} stellar points.`)
     : (isCN
         ? `正在星渊宇宙探索学习平台探索宇宙奥秘，已完成 ${completedLevels} / ${TOTAL_LEVELS} 个关卡，结识 ${scientists.length} 位科学家，累计获得 ${stars} 星分，探索之旅仍在继续。`
-        : `is actively exploring the Xingyuan Space Academy, having completed ${completedLevels} of ${TOTAL_LEVELS} courses, befriended ${scientists.length} scientists, and earned ${stars} stellar points. The journey continues.`)
+        : `is actively exploring the Xingyuan Space Center, having completed ${completedLevels} of ${TOTAL_LEVELS} courses, befriended ${scientists.length} scientists, and earned ${stars} stellar points. The journey continues.`)
   const novaLabel    = isCN ? 'NOVA 结业评语' : "NOVA's Evaluation"
   const issuedLabel  = isCN ? '颁　发　于' : 'Issued on'
   const dateStr      = isCN ? dateCN : dateEN
@@ -180,7 +181,7 @@ export default function CertificatePage() {
   return (
     <div className="page-container">
       <div className="stars-bg"/>
-      <div style={{ position:'relative', zIndex:1, padding:'1.5rem', maxWidth:'720px', margin:'0 auto' }}>
+      <div style={{ position:'relative', zIndex:1, padding: m ? '1rem 0.75rem' : '1.5rem', maxWidth:'720px', margin:'0 auto' }}>
 
         {/* ── Action bar ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.25rem', flexWrap:'wrap', gap:'0.75rem' }}>
@@ -259,26 +260,20 @@ export default function CertificatePage() {
           }}/>
 
           {/* Body */}
-          <div style={{ position:'relative', zIndex:1, padding:'2.75rem 3.5rem', textAlign:'center' }}>
+          <div style={{ position:'relative', zIndex:1, padding: m ? '1.75rem 1.25rem' : '2.75rem 3.5rem', textAlign:'center' }}>
 
             {/* Academy identity */}
-            <p style={{
-              fontFamily:"'Orbitron', sans-serif", fontSize:'0.62rem',
-              letterSpacing:'0.45em', color: accent, opacity:0.65, marginBottom:'0.5rem'
-            }}>
-              XINGYUAN · 星 渊
-            </p>
             <p style={{
               fontFamily:"'Orbitron', sans-serif", fontSize:'0.82rem',
               letterSpacing:'0.22em', color: accent, fontWeight:700, marginBottom:'0.2rem'
             }}>
-              XINGYUAN SPACE ACADEMY
+              XINGYUAN SPACE CENTER
             </p>
             <p style={{
               fontFamily:"'Noto Serif SC', serif", fontSize:'0.72rem',
               letterSpacing:'0.45em', color: accent, opacity:0.65
             }}>
-              星　渊　宇　宙　学　院
+              星　渊　宇　宙　中 心
             </p>
 
             <Divider/>
